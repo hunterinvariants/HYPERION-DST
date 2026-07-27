@@ -216,14 +216,32 @@ func (r *Ring) submitAndWait(request sqe) error {
 	array[index] = index
 	atomic.StoreUint32(r.sqTail, tail+1)
 
-	_, _, errno := syscall.RawSyscall6(sysIOUringEnter, uintptr(r.fd), 1, 1,
-		ioUringEnterGetEvents, 0, 0)
-	if errno != 0 {
-		return fmt.Errorf("io_uring_enter: %w", errno)
+	for {
+		submitted, _, errno := syscall.RawSyscall6(sysIOUringEnter, uintptr(r.fd),
+			1, 0, 0, 0, 0)
+		if errno == syscall.EINTR {
+			continue
+		}
+		if errno != 0 {
+			return fmt.Errorf("io_uring_enter submit: %w", errno)
+		}
+		if submitted != 1 {
+			return fmt.Errorf("io_uring_enter submitted %d SQEs, want 1", submitted)
+		}
+		break
 	}
+
 	cqHead := atomic.LoadUint32(r.cqHead)
-	if cqHead == atomic.LoadUint32(r.cqTail) {
-		return errors.New("uring: completion queue unexpectedly empty")
+	for cqHead == atomic.LoadUint32(r.cqTail) {
+		_, _, errno := syscall.RawSyscall6(sysIOUringEnter, uintptr(r.fd),
+			0, 1, ioUringEnterGetEvents, 0, 0)
+		if errno == syscall.EINTR {
+			continue
+		}
+		if errno != 0 {
+			return fmt.Errorf("io_uring_enter wait: %w", errno)
+		}
+		cqHead = atomic.LoadUint32(r.cqHead)
 	}
 	completions := unsafe.Slice(r.cqes, atomic.LoadUint32(r.cqEntries))
 	completion := completions[cqHead&atomic.LoadUint32(r.cqMask)]
