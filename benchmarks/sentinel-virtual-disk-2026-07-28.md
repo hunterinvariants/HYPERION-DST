@@ -9,7 +9,7 @@ This is a functional durability baseline, not an NVMe performance result.
 - kernel: `6.8.0-136-generic`, `PREEMPT_DYNAMIC`
 - CPU: Intel Core i7-1165G7, 8 vCPUs
 - memory: 7.6 GiB
-- filesystem: ext4 on virtual block device `/dev/sda2`
+- filesystem: ext4 on block device `/dev/sda2`
 - Go: 1.25.0 linux/amd64
 - io_uring policy: enabled
 
