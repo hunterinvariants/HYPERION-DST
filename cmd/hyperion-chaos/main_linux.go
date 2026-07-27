@@ -26,7 +26,8 @@ func main() {
 	}
 	plan := chaos.Plan{
 		Namespace: "hyperion-chaos", HostVeth: "hyperion-host",
-		PeerVeth: "hyperion-peer", BPFObject: *object, Delay: *delay, LossPct: *loss,
+		PeerVeth: "hyperion-peer", HostCIDR: "192.0.2.1/30",
+		PeerCIDR: "192.0.2.2/30", BPFObject: *object, Delay: *delay, LossPct: *loss,
 	}
 	controller, err := chaos.New(plan, chaos.ExecRunner{})
 	if err != nil {
@@ -37,7 +38,8 @@ func main() {
 	if err := controller.Apply(ctx); err != nil {
 		fatal(err)
 	}
-	fmt.Println("chaos namespace active; interrupt to clean up")
+	fmt.Println("chaos namespace active; test with: ping 192.0.2.2")
+	fmt.Println("interrupt to detach programs and clean up")
 	<-ctx.Done()
 	cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
