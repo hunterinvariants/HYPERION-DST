@@ -12,7 +12,7 @@ type HardState struct {
 // StableStore is Raft's safety-critical persistence boundary.
 type StableStore interface {
 	SaveHardState(HardState) error
-	Append(Entry) error
+	Append(uint64, Entry) error
 }
 
 type memoryStore struct {
@@ -25,7 +25,7 @@ func (s *memoryStore) SaveHardState(h HardState) error {
 	return nil
 }
 
-func (s *memoryStore) Append(e Entry) error {
+func (s *memoryStore) Append(_ uint64, e Entry) error {
 	s.log = append(s.log, e)
 	return nil
 }

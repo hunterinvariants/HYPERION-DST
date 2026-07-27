@@ -18,19 +18,29 @@ type Node struct {
 	next     map[uint32]uint64
 	match    map[uint32]uint64
 	outbound []Message
+	store    StableStore
+	Faulted  bool
 }
 
 func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
+	return NewNodeWithStore(id, peers, electionTimeout, &memoryStore{})
+}
+
+func NewNodeWithStore(id uint32, peers []uint32, electionTimeout uint64, store StableStore) *Node {
 	return &Node{
 		ID: id, Peers: append([]uint32(nil), peers...), State: Follower,
 		Log: []Entry{{}}, timeout: electionTimeout,
 		next:     make(map[uint32]uint64, len(peers)),
 		match:    make(map[uint32]uint64, len(peers)),
 		outbound: make([]Message, 0, outboundCapacity),
+		store:    store,
 	}
 }
 
 func (n *Node) Tick() {
+	if n.Faulted {
+		return
+	}
 	n.elapsed++
 	if n.State == Leader {
 		if n.elapsed >= 3 {
@@ -45,7 +55,11 @@ func (n *Node) Tick() {
 }
 
 func (n *Node) startElection() {
-	n.State, n.Term, n.VotedFor, n.votes, n.elapsed = Candidate, n.Term+1, n.ID, 1, 0
+	nextTerm := n.Term + 1
+	if !n.persistHardState(HardState{Term: nextTerm, VotedFor: n.ID}) {
+		return
+	}
+	n.State, n.Term, n.VotedFor, n.votes, n.elapsed = Candidate, nextTerm, n.ID, 1, 0
 	last := uint64(len(n.Log) - 1)
 	for _, p := range n.Peers {
 		n.send(Message{Type: MsgRequestVote, From: n.ID, To: p, Term: n.Term,
@@ -57,7 +71,13 @@ func (n *Node) startElection() {
 }
 
 func (n *Node) Step(m Message) {
+	if n.Faulted {
+		return
+	}
 	if m.Term > n.Term {
+		if !n.persistHardState(HardState{Term: m.Term}) {
+			return
+		}
 		n.State, n.Term, n.VotedFor, n.Leader = Follower, m.Term, 0, 0
 	}
 	switch m.Type {
@@ -83,6 +103,9 @@ func (n *Node) onVote(m Message) {
 		(m.LogTerm == n.Log[last].Term && m.LogIndex >= last)
 	grant := m.Term == n.Term && (n.VotedFor == 0 || n.VotedFor == m.From) && upToDate
 	if grant {
+		if !n.persistHardState(HardState{Term: n.Term, VotedFor: m.From}) {
+			return
+		}
 		n.VotedFor, n.elapsed = m.From, 0
 	}
 	n.send(Message{Type: MsgRequestVoteResponse, From: n.ID, To: m.From,
@@ -100,6 +123,10 @@ func (n *Node) onAppend(m Message) {
 				n.Log = n.Log[:at]
 			}
 			if at == uint64(len(n.Log)) {
+				if err := n.store.Append(at, m.Entry); err != nil {
+					n.failStorage()
+					return
+				}
 				n.Log = append(n.Log, m.Entry)
 			}
 		}
@@ -112,7 +139,7 @@ func (n *Node) onAppend(m Message) {
 }
 
 func (n *Node) onAppendResponse(m Message) {
-	if n.State != Leader || m.Term != n.Term {
+	if n.State != Leader || m.Term != n.Term || m.Match >= uint64(len(n.Log)) {
 		return
 	}
 	if m.Reject {
@@ -145,10 +172,15 @@ func (n *Node) onAppendResponse(m Message) {
 }
 
 func (n *Node) Propose(command uint64) bool {
-	if n.State != Leader {
+	if n.State != Leader || n.Faulted {
 		return false
 	}
-	n.Log = append(n.Log, Entry{Term: n.Term, Command: command})
+	entry := Entry{Term: n.Term, Command: command}
+	if err := n.store.Append(uint64(len(n.Log)), entry); err != nil {
+		n.failStorage()
+		return false
+	}
+	n.Log = append(n.Log, entry)
 	n.broadcastAppend()
 	return true
 }
@@ -170,6 +202,10 @@ func (n *Node) broadcastAppend() {
 
 func (n *Node) appendTo(p uint32) {
 	next := n.next[p]
+	if next > uint64(len(n.Log)) {
+		next = uint64(len(n.Log))
+		n.next[p] = next
+	}
 	if next == 0 {
 		next = 1
 	}
@@ -205,3 +241,17 @@ func (n *Node) Apply() []uint64 {
 }
 
 func (n *Node) quorum(v int) bool { return v >= (len(n.Peers)+1)/2+1 }
+func (n *Node) persistHardState(h HardState) bool {
+	if err := n.store.SaveHardState(h); err != nil {
+		n.failStorage()
+		return false
+	}
+	return true
+}
+
+func (n *Node) failStorage() {
+	n.Faulted = true
+	n.State = Follower
+	n.Leader = 0
+	n.outbound = n.outbound[:0]
+}

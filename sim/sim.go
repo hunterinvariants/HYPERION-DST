@@ -8,6 +8,8 @@ import (
 	"math/rand"
 
 	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/HYPERION-DST/storage/raftwal"
+	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
 )
 
 type scheduled struct {
@@ -26,6 +28,8 @@ type Config struct {
 type Simulator struct {
 	Now     uint64
 	Nodes   map[uint32]*raft.Node
+	stores  map[uint32]*raftwal.Store
+	disks   map[uint32]*wal.MemoryDevice
 	rng     *rand.Rand
 	drop    int
 	delay   uint64
@@ -40,7 +44,9 @@ func New(c Config) *Simulator {
 		panic("sim: Nodes must be positive")
 	}
 	s := &Simulator{Nodes: make(map[uint32]*raft.Node, c.Nodes),
-		rng: rand.New(rand.NewSource(c.Seed)), drop: c.DropPermille,
+		stores: make(map[uint32]*raftwal.Store, c.Nodes),
+		disks:  make(map[uint32]*wal.MemoryDevice, c.Nodes),
+		rng:    rand.New(rand.NewSource(c.Seed)), drop: c.DropPermille,
 		delay: c.MaxDelay, scratch: make([]raft.Message, 0, 4096)}
 	for i := 1; i <= c.Nodes; i++ {
 		id := uint32(i)
@@ -51,7 +57,13 @@ func New(c Config) *Simulator {
 			}
 		}
 		// Stable per-node jitter prevents perpetual split votes.
-		s.Nodes[id] = raft.NewNode(id, peers, 8+uint64(i*2))
+		disk := wal.NewMemoryDevice(nil)
+		store, err := raftwal.Open(disk)
+		if err != nil {
+			panic(err)
+		}
+		s.disks[id], s.stores[id] = disk, store
+		s.Nodes[id] = raft.NewNodeWithStore(id, peers, 8+uint64(i*2), store)
 	}
 	return s
 }
