@@ -1,0 +1,29 @@
+name: kernel-build
+
+on:
+  push:
+    paths:
+      - "bpf/**"
+      - "chaos/**"
+      - "cmd/hyperion-chaos/**"
+      - "storage/uring/**"
+      - ".github/workflows/kernel.yml"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-kernel-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y clang llvm libbpf-dev linux-libc-dev
+      - run: go test ./chaos ./storage/uring
+      - run: go build ./cmd/hyperion-chaos
+      - run: clang -O2 -g -target bpf -D__TARGET_ARCH_x86 -c bpf/hyperion_chaos.bpf.c -o /tmp/hyperion_chaos.bpf.o
+
