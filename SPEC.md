@@ -1,25 +1,31 @@
-# HYPERION-DST Safety Specification
+﻿# HYPERION-DST safety specification
 
 ## Model
 
 Let `N` be the finite node set, `T` the monotonically increasing term domain,
-and `L_n[i] = (term, command)` the log entry at index `i` on node `n`.
-A quorum is any `Q ⊆ N` such that `|Q| > |N|/2`. Nodes fail by crash-stop in
-one execution and may recover from stable storage in a later execution.
-Messages may be delayed, duplicated, reordered, or dropped, but not forged.
+and `L_n[i] = (term, command)` the log entry at index `i` on node `n`. A quorum
+is any `Q subseteq N` where `|Q| > |N|/2`. Nodes may crash and later recover
+only from stable state. Messages may be delayed, duplicated, reordered, or
+dropped, but not forged.
 
 ## Election safety
 
 A node persists `(currentTerm, votedFor)` before granting a vote. It grants at
 most one vote in a term:
 
-`∀ n ∈ N, t ∈ T: |{c : VoteGranted(n, c, t)}| ≤ 1`.
+```text
+for all n in N, t in T:
+  |{c : VoteGranted(n, c, t)}| <= 1
+```
 
-Two leaders in the same term would each require a quorum. Any two majorities
-intersect, so some node would have voted twice in that term, contradicting the
-rule above. Therefore:
+Two leaders in one term would each require a majority. Any two majorities
+intersect, so an intersection node would have voted twice in the same term,
+contradicting the persisted-vote rule. Therefore:
 
-`∀ t ∈ T: |{n : Leader(n, t)}| ≤ 1`.
+```text
+for all t in T:
+  |{n : Leader(n, t)}| <= 1
+```
 
 ## Log matching
 
@@ -27,49 +33,86 @@ AppendEntries is accepted at index `i` only when the follower has the same term
 as the leader at `i-1`. On conflict, the follower deletes the conflicting
 suffix before appending:
 
-`L_a[i].term = L_b[i].term ⇒ ∀ j ≤ i: L_a[j] = L_b[j]`.
+```text
+L_a[i].term = L_b[i].term
+  implies for all j <= i: L_a[j] = L_b[j]
+```
 
-This follows by induction on `i`: the base sentinel is common; the acceptance
-check establishes the predecessor, and entries are copied identically.
+The base sentinel is common. The predecessor check establishes the induction
+step, and accepted entries are copied identically.
 
 ## Leader completeness and state-machine safety
 
-An entry is committed only after storage on a quorum and, for a leader's
-commit-index advancement, only if it is from the leader's current term.
+An entry advances the leader commit index only after storage on a quorum and,
+for commit advancement, only when the entry is from the leader's current term.
 Every later election quorum intersects that storage quorum. The up-to-date-log
-vote rule prevents a candidate missing the committed entry from collecting the
-intersection vote. Thus every later leader contains every committed entry.
+vote rule prevents a candidate missing the committed entry from receiving the
+intersection vote.
 
-Since nodes apply committed entries strictly in increasing index order and log
-matching makes committed prefixes identical:
+Nodes apply committed entries strictly in increasing index order. Therefore:
 
-`∀ a,b ∈ N, i: applied_a(i) ∧ applied_b(i) ⇒ L_a[i] = L_b[i]`.
+```text
+for all a, b in N and index i:
+  applied_a(i) and applied_b(i) implies L_a[i] = L_b[i]
+```
 
-## Linearizability
+## Persistence ordering
 
-For completed operations `op ∈ H`, define the linearization point of a write as
-the first instant its log entry becomes committed, and of a read as the instant
-a quorum-confirmed leader observes its applied index. A valid sequential
-history `S` must preserve real-time precedence:
+The implementation enforces these happens-before relationships:
 
-`∀ op₁,op₂ ∈ H: op₁ ≺H op₂ ⇒ op₁ ≺S op₂`.
+```text
+Persist(term, vote) happens-before Send(VoteGranted)
+Persist(log[index]) happens-before Send(AppendAccepted(index))
+WriteFixed(block) happens-before CQE(write)
+CQE(write) happens-before Submit(FSYNC)
+CQE(FSYNC) happens-before DurableSuccess
+```
 
-The current executable slice implements replicated writes. Linearizable reads
-require the planned ReadIndex/lease proof and are not yet exposed.
+A persistence error moves the node to fail-stop state and clears unsent
+responses. It must never acknowledge state that was not reported durable.
 
-## Crash/replay equivalence
+## WAL integrity and recovery
+
+Each fixed record contains magic, version, sequence, index, term, command, and a
+CRC32C checksum. Recovery accepts only a contiguous, checksum-valid prefix. A
+partial final record is truncated before a later append. Complete corrupt
+records and sequence gaps are fatal.
 
 For snapshot index `s` and durable WAL tail ending at `last_seq`:
 
-`State(N,t_rec) = Fold(Snapshot(s), WAL[s+1..last_seq])`.
+```text
+State(node, recovery_time) =
+  Fold(Snapshot(s), WAL[s+1 .. last_seq])
+```
 
-Recovery must reject torn or checksum-invalid records and must never expose an
-acknowledged entry that was not durably persisted according to the configured
-durability policy.
+The snapshot file format and WAL replay are implemented. Snapshot installation
+and Raft log compaction are still production gates.
+
+## Linearizability boundary
+
+A completed write linearizes when its log entry first becomes committed. A
+linearizable read requires a quorum-confirmed ReadIndex or a proven leader
+lease. The current executable system implements replicated writes but does not
+yet expose a production client/read protocol; strict serializability is
+therefore not yet claimed.
+
+For completed operations in history `H`, a valid sequential history `S` must
+preserve real-time precedence:
+
+```text
+op1 precedes_H op2 implies op1 precedes_S op2
+```
+
+## Membership changes
+
+During joint consensus, commit requires a majority of both the old and new
+voter sets. The quorum primitive is implemented and tested. Replicated
+configuration entries and the two committed transition phases are not yet
+integrated, so dynamic membership is not yet claimed.
 
 ## Proof boundary
 
-These are paper proofs over the stated model, not machine-checked proofs.
-`go test ./...` performs bounded randomized invariant checking. TLA+/Apalache
-model checking and Jepsen/Knossos live verification are roadmap gates.
-
+These are engineering proof arguments over the stated model, supported by
+bounded deterministic tests. They are not machine-checked proofs. The current
+TLA+ model covers durable election state and crash recovery; AppendEntries,
+commit, snapshot, and membership model checking remain required.

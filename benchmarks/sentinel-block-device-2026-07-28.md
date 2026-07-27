@@ -41,6 +41,6 @@ operations=1000 block=4096 total=542.396749ms
 ops_per_sec=1844 p50=533.815us p99=705.035us max=1.382461ms
 ```
 
-The virtual disk and filesystem stack dominate these numbers. They must not be
+The block device and filesystem stack dominate these numbers. They must not be
 presented as physical NVMe latency.
 

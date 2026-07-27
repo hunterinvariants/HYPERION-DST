@@ -1,28 +1,104 @@
 ﻿# HYPERION-DST
 
-HYPERION-DST is a laboratory for building and verifying a deterministic,
-crash-safe replicated state machine. The repository deliberately separates
-portable consensus logic from Linux-only storage and fault-injection backends.
+[![CI](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml)
+[![Kernel build](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml)
 
-The first executable vertical slice contains:
+HYPERION-DST is a verification-focused distributed consensus engine combining
+a deterministic simulator, durable Raft state, a checksummed WAL, registered
+Linux `io_uring` I/O, and isolated XDP/TC kernel fault injection.
 
-- a single-threaded virtual clock and seeded network scheduler;
-- a compact Raft core with elections, heartbeats, replication, and commit;
-- reproducible drop, delay, and node-crash faults;
-- trace hashing so equal seeds can be checked bit-for-bit;
-- a fixed-record CRC32C WAL with deterministic torn-write crash recovery;
-- executable safety tests and a mathematical specification.
+The project reports only capabilities that are backed by executable tests or a
+checked-in measurement. It is not yet a production database; the exact exit
+criteria are tracked in [STATUS.md](STATUS.md).
 
-```text
-go test ./...
+## What works today
+
+- deterministic virtual time, seeded scheduling, message delay/drop, and restart;
+- Raft elections, replication, commit, durable term/vote, and durable entry ACKs;
+- fail-stop behavior when stable storage rejects a write;
+- fixed 48-byte CRC32C WAL records, sequence validation, torn-tail recovery;
+- crash/restart reconstruction exclusively from durable WAL state;
+- registered-file and registered-buffer `io_uring` data path using `WRITE_FIXED`;
+- CQE identity, error, and short-write validation followed by a separate `FSYNC`;
+- checksummed WAL records stored in aligned 4096-byte `O_DIRECT` blocks;
+- XDP ingress drop/partition and TC egress drop/corruption programs;
+- namespace-safe eBPF/netem controller with mandatory cleanup;
+- checksummed snapshot image format and joint-quorum calculation primitive;
+- parallel seed sweeper, race tests, fuzz target, benchmarks, and CI;
+- initial TLA+ durable-election and crash model.
+
+## Verified Linux baseline
+
+On the `sentinel` Linux host, the following gates passed:
+
+- Ubuntu 24.04.4 LTS, kernel `6.8.0-136-generic`, Go 1.25.0;
+- `io_uring_setup`, registered buffer/file, `O_DIRECT`, `WRITE_FIXED`, CQE, `FSYNC`;
+- WAL write, close, reopen, checksum validation, and bit-exact replay;
+- XDP and TC verifier/JIT loading;
+- isolated 25 ms TC delay and configured 10% XDP drop injection;
+- namespace, veth, map, and program cleanup;
+- complete `go test ./... -race -count=1` suite.
+
+Measured durable block writes on ext4 over `/dev/sda2`:
+
+| Metric | Result |
+|---|---:|
+| Operations | 1,000 |
+| Throughput | 1,844 ops/s |
+| p50 | 533.815 us |
+| p99 | 705.035 us |
+| Max | 1.382461 ms |
+
+This is a block-device baseline, not a physical NVMe measurement. Full evidence
+and commands are in [benchmarks/sentinel-block-device-2026-07-28.md](benchmarks/sentinel-block-device-2026-07-28.md).
+
+## Quick start
+
+```bash
+go test ./... -race -count=1
 go run ./cmd/hyperion-sim -seed 0x4A2C -steps 10000 -nodes 5
+go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
 ```
 
-The current hot-path contract is allocation-bounded, not yet proven
-zero-allocation. Run benchmarks with `-benchmem`; a later Linux milestone will
-add fixed pools, `io_uring` + `O_DIRECT`, and XDP/TC programs behind the
-interfaces in `storage`.
+Linux capability and integration gates:
 
-See [SPEC.md](SPEC.md) for the invariants and [ROADMAP.md](ROADMAP.md) for the
-kernel and verification milestones.
+```bash
+go run ./cmd/hyperion-probe -entries 32
+HYPERION_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal -count=1 -v
+```
 
+The chaos controller must be used only with its dedicated `hyperion-*`
+namespace and veth pair. Never attach development fault policies to a management
+interface. See [bpf/README.md](bpf/README.md).
+
+## Architecture
+
+```text
+seed runner / deterministic simulator
+                |
+                v
+        durable Raft core
+          |           |
+          v           v
+     CRC32C WAL   snapshots
+          |
+          v
+ registered io_uring + O_DIRECT
+
+isolated netns -> XDP / TC / netem -> controlled kernel faults
+```
+
+## Repository map
+
+- `raft/`: consensus state machine, persistence boundary, quorum logic;
+- `sim/`: deterministic scheduler, crash/restart, safety invariants;
+- `storage/wal/`: portable WAL format and recovery;
+- `storage/uring/`: Linux ring mappings and registered I/O;
+- `storage/uringwal/`: WAL-to-aligned-io_uring adapter;
+- `storage/snapshot/`: checksummed snapshot images;
+- `chaos/`, `bpf/`: safe controller and kernel programs;
+- `verification/tla/`: current formal model;
+- `benchmarks/`: checked-in measurement evidence.
+
+See [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), and [ROADMAP.md](ROADMAP.md).
