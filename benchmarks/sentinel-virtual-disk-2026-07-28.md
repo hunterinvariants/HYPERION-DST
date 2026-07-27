@@ -1,15 +1,15 @@
-# Sentinel io_uring baseline — 2026-07-28
+﻿# Sentinel io_uring baseline â€” 2026-07-28
 
 This is a functional durability baseline, not an NVMe performance result.
 
 ## Environment
 
-- host: `sentinel` (VMware virtual machine)
+- host: `sentinel` (virtual machine)
 - OS: Ubuntu 24.04.4 LTS
 - kernel: `6.8.0-136-generic`, `PREEMPT_DYNAMIC`
 - CPU: Intel Core i7-1165G7, 8 vCPUs
 - memory: 7.6 GiB
-- filesystem: ext4 on VMware virtual `/dev/sda2`
+- filesystem: ext4 on virtual block device `/dev/sda2`
 - Go: 1.25.0 linux/amd64
 - io_uring policy: enabled
 
