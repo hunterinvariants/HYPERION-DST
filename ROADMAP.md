@@ -54,12 +54,15 @@ Evidence: `benchmarks/sentinel-phase4-2026-07-28.md`.
 
 Sentinel evidence: `benchmarks/sentinel-phase5-2026-07-28.md`.
 
-## Phase 6 - formal and production qualification: in progress
+## Phase 6 - formal and production qualification: complete
 
 1. complete TLA+ protocol model and bounded CI model checking;
 2. disk-full, I/O-error, process-kill, and corruption campaigns;
 3. dedicated GCP Local SSD NVMe qualification: complete for the recorded configuration;
 4. documented operating envelope and release checklist.
+
+Evidence: `benchmarks/sentinel-phase6-2026-07-28.md` and
+`benchmarks/gcp-local-nvme-2026-07-28.md`.
 
 No phase is considered complete from code presence alone. It requires an
 executable test or recorded external evidence.

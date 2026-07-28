@@ -27,7 +27,7 @@ Updated: 2026-07-28
 | Snapshot format | checksummed encode/decode and torn-image rejection | unit tests |
 | Membership | old/new joint-majority calculation | unit tests |
 | Tooling | seed sweeper, race suite, fuzz target, CI | executable commands/workflows |
-| Formal | durable-election/crash TLA+ model | checked-in model |
+| Formal | bounded election, append, commit, snapshot, membership, and crash TLA+ model | 6,121,927 distinct states; all invariants pass |
 | Service | versioned peer/client protocol and multi-process TCP cluster | protocol and three-process restart tests |
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
@@ -48,28 +48,24 @@ Additional measured evidence:
 - Jepsen/Knossos register history under process and TC faults: `valid? true`.
 - GCP Local SSD NVMe gate: 10,000 durable operations, p50 95.074 us,
   p99 132.080 us, max 551.414 us; race, TLC, and 100x integration gates pass.
+- Phase 6 Sentinel gate: ENOSPC/EIO/corruption/restart/SIGKILL pass;
+  Jepsen/Knossos `valid? true`; bounded TLC 46,667,923 generated and
+  6,121,927 distinct states with no invariant violation.
 
-## Remaining production gates
+## Post-release engineering backlog
 
-### P0: independent verification
+These are optimizations and broader deployment work, not incomplete roadmap
+acceptance gates:
 
-- expand TLA+ to AppendEntries, commit, snapshot installation, and membership;
-- run the model checker in CI with a documented state bound;
-- add filesystem-full, injected I/O-error, and extended restart integration campaigns.
-
-### P1: storage performance and operability
-
-- batch multiple SQEs and harvest multiple CQEs per enter call;
-- add buffer/file lifecycle state machines and queue saturation backpressure;
-- benchmark group commit and durability-policy tradeoffs;
-- test disk-full, short-I/O, checksum corruption, and failed `FSYNC` paths;
-- add manifest/version migration and extended observability procedures.
-
+- batched SQE submission, group commit, and queue-depth tuning;
+- format migration tooling and broader operational automation;
+- qualification of additional kernels, controllers, and machine types.
 
 ## Claim policy
 
-HYPERION-DST has a completed, Linux-qualified Raft protocol core. It remains
-an engineering prototype rather than a production database until the Phase 6
-production qualification gates are complete. Full
-zero-allocation, sub-microsecond physical durability, strict serializability, and machine-checked safety must not
-be claimed until their corresponding gates above have passed.
+HYPERION-DST has completed all six scoped roadmap phases and their recorded
+acceptance gates. It is a verification-focused reference system, not a turnkey
+managed database service. Claims remain bounded by the checked-in evidence:
+zero-allocation is established only for the measured hot paths, NVMe latency
+only for the named GCP configuration, Jepsen linearizability only for the
+recorded workload, and TLA+ safety only for the documented finite bounds.

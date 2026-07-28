@@ -7,9 +7,10 @@ HYPERION-DST is a verification-focused distributed consensus engine combining
 a deterministic simulator, durable Raft state, a checksummed WAL, registered
 Linux `io_uring` I/O, and isolated XDP/TC kernel fault injection.
 
-The project reports only capabilities that are backed by executable tests or a
-checked-in measurement. It is not yet a production database; the exact exit
-criteria are tracked in [STATUS.md](STATUS.md).
+The project reports only capabilities backed by executable tests, bounded model
+checking, or checked-in measurements. All six scoped roadmap phases are
+complete; evidence bounds and remaining optimizations are tracked in
+[STATUS.md](STATUS.md).
 
 ## What works today
 
@@ -26,7 +27,7 @@ criteria are tracked in [STATUS.md](STATUS.md).
 - namespace-safe eBPF/netem controller with mandatory cleanup;
 - checksummed snapshot image format and joint-quorum calculation primitive;
 - parallel seed sweeper, race tests, fuzz target, benchmarks, and CI;
-- initial TLA+ durable-election and crash model;
+- bounded TLA+ model covering election, replication, commit, snapshots, membership, and crash recovery;
 - versioned CRC32C peer/client protocol, TCP multi-process service, replicated deduplication, ReadIndex reads, bounded backpressure, health/metrics, and backup/restore.
 
 ## Verified Linux baseline
@@ -41,7 +42,8 @@ On the `sentinel` Linux host, the following gates passed:
 - namespace, veth, map, and program cleanup;
 - complete `go test ./... -race -count=1` suite;
 - five-process Phase 5 failover, health, metrics, backup/restore gate;
-- 60-second live Jepsen/Knossos workload under process and TC network faults: `valid? true`.
+- bounded live Jepsen/Knossos workload under process and TC network faults: `valid? true`;
+- bounded TLC model: 46,667,923 states generated, 6,121,927 distinct, no invariant violation.
 
 Measured durable block writes on ext4 over `/dev/sda2`:
 
