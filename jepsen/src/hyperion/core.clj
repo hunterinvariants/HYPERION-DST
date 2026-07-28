@@ -48,7 +48,7 @@
                      (.putShort (short 1))
                      (.putShort (short 2))
                      (.putInt (alength payload))
-                     (.putInt (int (crc payload))))]
+                     (.putInt (unchecked-int (crc payload))))]
         (.write out (.array header))
         (.write out payload)
         (.flush out))
@@ -84,7 +84,7 @@
   client/Client
   (open! [this _test node-name]
     (let [index (.indexOf ^java.util.List (:nodes _test) node-name)]
-      (assoc this :node index :client-id (inc (Math/abs (hash [node-name (System/nanoTime)]))) :sequence (atom 0))))
+      (assoc this :node index :client-id (max 1 (bit-and Long/MAX_VALUE (System/nanoTime))) :sequence (atom 0))))
   (setup! [this _test] this)
   (invoke! [this _test op]
     (let [request-id (swap! sequence inc)
@@ -113,10 +113,11 @@
           :client (HyperionClient. nil nil nil)
           :model (model/register)
           :checker (checker/compose {:linearizable (checker/linearizable {:model (model/register)})
-                                     :timeline timeline/html})
-          :generator (->> (gen/mix [read-op write-op])
-                          (gen/stagger 0.01)
-                          (gen/time-limit (:time-limit opts 60)))}))
+                                     :timeline (timeline/html)})
+          :generator (gen/clients
+                       (->> (gen/mix [read-op write-op])
+                            (gen/stagger 0.01)
+                            (gen/time-limit (:time-limit opts 60))))}))
 
 (defn -main [& args]
   (cli/run! (merge (cli/single-test-cmd {:test-fn hyperion-test})
