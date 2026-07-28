@@ -25,5 +25,5 @@ jobs:
       - run: sudo apt-get install -y clang llvm libbpf-dev linux-libc-dev
       - run: go test ./chaos ./storage/uring
       - run: go build ./cmd/hyperion-chaos
-      - run: clang -O2 -g -target bpf -D__TARGET_ARCH_x86 -c bpf/hyperion_chaos.bpf.c -o /tmp/hyperion_chaos.bpf.o
+      - run: clang -O2 -g -target bpf -D__TARGET_ARCH_x86 -I/usr/include/$(gcc -dumpmachine) -c bpf/hyperion_chaos.bpf.c -o /tmp/hyperion_chaos.bpf.o
 

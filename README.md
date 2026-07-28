@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml)
 [![Kernel build](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml)
+[![Formal](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml)
+![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
 
 HYPERION-DST is a verification-focused distributed consensus engine combining
 a deterministic simulator, durable Raft state, a checksummed WAL, registered
@@ -11,6 +13,10 @@ The project reports only capabilities backed by executable tests, bounded model
 checking, or checked-in measurements. All six scoped roadmap phases are
 complete; evidence bounds and remaining optimizations are tracked in
 [STATUS.md](STATUS.md).
+
+The implementation and its six scoped qualification phases are frozen at the
+documented reference baseline. See [EVIDENCE.md](EVIDENCE.md) for the final
+evidence index and the precise bounds of every claim.
 
 ## What works today
 
