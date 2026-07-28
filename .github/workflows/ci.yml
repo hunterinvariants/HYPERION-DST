@@ -21,3 +21,30 @@ jobs:
       - run: go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
       - run: go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
 
+  uring:
+    name: io_uring integration (registered file/buffer, O_DIRECT, WRITE_FIXED)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      # The integration tests skip themselves unless this is set. Without it the
+      # ring setup, registered buffers/files, WRITE_FIXED, CQE validation and
+      # FSYNC path had no automated gate at all -- only a manual host run frozen
+      # in a benchmark file.
+      - name: Probe io_uring capability on the runner
+        id: probe
+        run: |
+          if go run ./cmd/hyperion-probe -entries 32; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::io_uring is unavailable on this runner (seccomp or kernel); the integration gate could not run here. The Linux baseline in EVIDENCE.md remains the authority for this path."
+          fi
+      - name: Registered io_uring and O_DIRECT WAL integration tests
+        if: steps.probe.outputs.available == 'true'
+        env:
+          HYPERION_URING_INTEGRATION: "1"
+        run: go test ./storage/uring ./storage/uringwal ./storage/raftstore -count=1 -v

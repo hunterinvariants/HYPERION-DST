@@ -17,6 +17,20 @@
   (delay (vec (str/split (or (System/getenv "HYPERION_CLIENTS")
                               "10.77.0.11:9200,10.77.0.12:9200,10.77.0.13:9200,10.77.0.14:9200,10.77.0.15:9200") #","))))
 
+;; Node names and client addresses are positional: the Nth node name uses the
+;; Nth entry of HYPERION_CLIENTS. Overridable so the same test can run against
+;; the netns cluster on a Linux host and against loopback processes in CI.
+(def nodes
+  (delay (if-let [value (System/getenv "HYPERION_NODES")]
+           (mapv keyword (str/split value #","))
+           [:n1 :n2 :n3 :n4 :n5])))
+
+;; Jepsen opens an SSH session per node unless told not to. The workload here
+;; drives the cluster over TCP and never shells into a node, so a loopback run
+;; sets HYPERION_JEPSEN_DUMMY_SSH=1 and skips it entirely.
+(def dummy-ssh?
+  (delay (= "1" (System/getenv "HYPERION_JEPSEN_DUMMY_SSH"))))
+
 (defn le-buffer [size]
   (doto (ByteBuffer/allocate size) (.order ByteOrder/LITTLE_ENDIAN)))
 
@@ -109,7 +123,8 @@
   (merge tests/noop-test
          opts
          {:name "hyperion-live-linearizability"
-          :nodes [:n1 :n2 :n3 :n4 :n5]
+          :nodes @nodes
+          :ssh {:dummy? @dummy-ssh?}
           :client (HyperionClient. nil nil nil)
           :model (model/register)
           :checker (checker/compose {:linearizable (checker/linearizable {:model (model/register)})

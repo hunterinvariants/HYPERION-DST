@@ -1,0 +1,64 @@
+name: jepsen
+
+# Linearizability was previously evidenced only by a transcript from one manual
+# host run, with no raw history in the repository and nothing executing the
+# Clojure test automatically. This job runs a reduced version of the same
+# workload -- same client protocol, same Knossos register model, same checker --
+# against a five-process loopback cluster, and uploads the history so the
+# `valid? true` claim can be re-derived rather than taken on trust.
+#
+# It is not a replacement for the networked Sentinel gate: a loopback run has no
+# namespaces to partition, so it exercises process faults and the checker, not
+# network partitions.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linearizability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install leiningen
+        run: |
+          curl -fsSL -o /tmp/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+          sudo install -m 0755 /tmp/lein /usr/local/bin/lein
+          lein version
+      - name: Reduced Jepsen/Knossos gate
+        id: gate
+        run: |
+          rc=0
+          bash scripts/jepsen-local-gate.sh 20 > /tmp/jepsen.log 2>&1 || rc=$?
+          tail -40 /tmp/jepsen.log
+          {
+            echo "### Jepsen/Knossos reduced gate (exit $rc)"
+            echo '```'
+            tail -40 /tmp/jepsen.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Annotations are readable on the run page without log access, so the
+          # checker verdict is visible to anyone reading the badge.
+          msg=$(tail -25 /tmp/jepsen.log | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\r','%0D').replace('\n','%0A'))")
+          if [ "$rc" -eq 0 ]; then echo "::notice::$msg"; else echo "::error::$msg"; fi
+          exit $rc
+      - name: Upload Jepsen history
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jepsen-store
+          path: jepsen/store/
+          if-no-files-found: warn
+          retention-days: 30

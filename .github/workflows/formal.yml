@@ -10,7 +10,9 @@ permissions:
 jobs:
   tlc:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The model now carries a durable-log dimension, so the state space is
+    # larger than the ten minutes the previous bound needed.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -18,4 +20,20 @@ jobs:
           distribution: temurin
           java-version: "21"
       - name: Bounded Raft model check
-        run: bash verification/run-tlc.sh
+        run: |
+          rc=0
+          bash verification/run-tlc.sh > /tmp/tlc.log 2>&1 || rc=$?
+          tail -30 /tmp/tlc.log
+          # The state counts are quoted in EVIDENCE.md and STATUS.md. Emitting
+          # them as an annotation keeps those documents checkable against the
+          # run that actually produced them, without needing log access.
+          stats=$(grep -E "states generated|depth of the complete state graph|Error" /tmp/tlc.log | tail -6)
+          {
+            echo "### Bounded TLC (exit $rc)"
+            echo '```'
+            echo "$stats"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          msg=$(printf '%s' "$stats" | python3 -c "import sys; print(sys.stdin.read().replace('%','%25').replace('\r','%0D').replace('\n','%0A'))")
+          if [ "$rc" -eq 0 ]; then echo "::notice::$msg"; else echo "::error::$msg"; fi
+          exit $rc
