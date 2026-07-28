@@ -219,16 +219,21 @@ func (r *Ring) submitAndWait(request sqe) error {
 	for {
 		submitted, _, errno := syscall.RawSyscall6(sysIOUringEnter, uintptr(r.fd),
 			1, 0, 0, 0, 0)
-		if errno == syscall.EINTR {
+		if errno == syscall.EINTR || errno == syscall.EAGAIN {
+			// The kernel may consume the SQE before a signal interrupts
+			// io_uring_enter. Never submit the published tail twice.
+			if atomic.LoadUint32(r.sqHead) != head {
+				break
+			}
 			continue
 		}
 		if errno != 0 {
 			return fmt.Errorf("io_uring_enter submit: %w", errno)
 		}
-		if submitted != 1 {
-			return fmt.Errorf("io_uring_enter submitted %d SQEs, want 1", submitted)
+		if submitted == 1 || atomic.LoadUint32(r.sqHead) != head {
+			break
 		}
-		break
+		return fmt.Errorf("io_uring_enter submitted %d SQEs, want 1", submitted)
 	}
 
 	cqHead := atomic.LoadUint32(r.cqHead)

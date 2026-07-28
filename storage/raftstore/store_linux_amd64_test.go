@@ -31,12 +31,12 @@ func TestIOUringSnapshotCompactionRecovery(t *testing.T) {
 	node.State, node.Term, node.Leader = raft.Leader, 3, 1
 	for command := uint64(1); command <= 3; command++ {
 		if !node.Propose(command) {
-			t.Fatalf("proposal %d failed", command)
+			t.Fatalf("proposal %d failed: %v", command, node.StorageError())
 		}
 	}
 	node.Commit, node.Applied = 3, 3
 	if !node.Compact(2, []byte("state-at-two")) {
-		t.Fatal("compaction failed")
+		t.Fatalf("compaction failed: %v", node.StorageError())
 	}
 	if err := store.SaveHardState(raft.HardState{Term: 3, Commit: 3}); err != nil {
 		t.Fatal(err)

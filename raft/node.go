@@ -24,6 +24,7 @@ type Node struct {
 	outbound      []Message
 	store         StableStore
 	Faulted       bool
+	storageErr    error
 	readContext   uint64
 	readAckMask   uint64
 	readIndex     uint64
@@ -220,11 +221,11 @@ func (n *Node) Compact(index uint64, state []byte) bool {
 	}
 	snapshot := Snapshot{LastIndex: index, LastTerm: term, State: append([]byte(nil), state...), OldVoters: n.votersOld, NewVoters: n.votersNew}
 	if err := store.SaveSnapshot(snapshot); err != nil {
-		n.failStorage()
+		n.failStorageWith(err)
 		return false
 	}
 	if err := store.CompactLog(index); err != nil {
-		n.failStorage()
+		n.failStorageWith(err)
 		return false
 	}
 	offset, _ := n.offset(index)
@@ -245,11 +246,11 @@ func (n *Node) onInstallSnapshot(m Message) {
 		snapshot := Snapshot{LastIndex: m.SnapshotIndex, LastTerm: m.SnapshotTerm,
 			State: append([]byte(nil), m.Snapshot...), OldVoters: m.SnapshotOld, NewVoters: m.SnapshotNew}
 		if err := store.SaveSnapshot(snapshot); err != nil {
-			n.failStorage()
+			n.failStorageWith(err)
 			return
 		}
 		if err := store.CompactLog(snapshot.LastIndex); err != nil {
-			n.failStorage()
+			n.failStorageWith(err)
 			return
 		}
 		if term, present := n.termAt(snapshot.LastIndex); present && term == snapshot.LastTerm {
@@ -375,7 +376,7 @@ func (n *Node) onAppend(m Message) {
 			}
 			if at == n.lastIndex()+1 {
 				if err := n.store.Append(at, m.Entry); err != nil {
-					n.failStorage()
+					n.failStorageWith(err)
 					return
 				}
 				n.Log = append(n.Log, m.Entry)
@@ -498,7 +499,7 @@ func (n *Node) ProposeFinal() bool {
 
 func (n *Node) appendLocal(entry Entry) bool {
 	if err := n.store.Append(n.lastIndex()+1, entry); err != nil {
-		n.failStorage()
+		n.failStorageWith(err)
 		return false
 	}
 	n.Log = append(n.Log, entry)
@@ -732,13 +733,24 @@ func nodeBit(id uint32) uint64 {
 }
 func (n *Node) persistHardState(h HardState) bool {
 	if err := n.store.SaveHardState(h); err != nil {
-		n.failStorage()
+		n.failStorageWith(err)
 		return false
 	}
 	return true
 }
 
+// StorageError reports the stable-storage error that caused fail-stop.
+func (n *Node) StorageError() error { return n.storageErr }
+
+func (n *Node) failStorageWith(err error) {
+	n.storageErr = err
+	n.failStorage()
+}
+
 func (n *Node) failStorage() {
+	if n.storageErr == nil {
+		n.storageErr = ErrStorage
+	}
 	n.Faulted = true
 	n.State = Follower
 	n.Leader = 0
