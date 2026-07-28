@@ -33,7 +33,9 @@ func (s *Simulator) CheckSafety() error {
 				ea, oka := na.EntryAt(index)
 				eb, okb := nb.EntryAt(index)
 				if !oka || !okb || ea.Term != eb.Term || (index > first && ea != eb) {
-					return fmt.Errorf("nodes %d/%d disagree at committed index %d", a, b, index)
+					return fmt.Errorf("nodes %d/%d disagree at committed index %d: a(term=%d command=%d commit=%d last=%d state=%d) b(term=%d command=%d commit=%d last=%d state=%d)",
+						a, b, index, ea.Term, ea.Command, na.Commit, na.LastIndex(), na.State,
+						eb.Term, eb.Command, nb.Commit, nb.LastIndex(), nb.State)
 				}
 			}
 		}

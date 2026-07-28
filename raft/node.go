@@ -390,9 +390,13 @@ func (n *Node) onAppend(m Message) {
 				}
 			}
 		}
-		if m.Commit > n.Commit {
+		if m.Commit > n.Commit && (m.LogIndex > n.Commit || (m.HasEntry && m.LogIndex+1 > n.Commit)) {
 			previous := n.Commit
-			commit := min(m.Commit, n.lastIndex())
+			matched := m.LogIndex
+			if m.HasEntry {
+				matched++
+			}
+			commit := min(m.Commit, matched)
 			if !n.persistHardState(HardState{Term: n.Term, VotedFor: n.VotedFor, Commit: commit}) {
 				return
 			}
@@ -400,8 +404,15 @@ func (n *Node) onAppend(m Message) {
 			n.applyCommittedConfigurations(previous+1, n.Commit)
 		}
 	}
+	match := n.lastIndex()
+	if !reject {
+		match = m.LogIndex
+		if m.HasEntry {
+			match++
+		}
+	}
 	n.send(Message{Type: MsgAppendResponse, From: n.ID, To: m.From,
-		Term: n.Term, Reject: reject, Match: n.lastIndex(), Context: m.Context})
+		Term: n.Term, Reject: reject, Match: match, Context: m.Context})
 }
 
 func (n *Node) onAppendResponse(m Message) {
