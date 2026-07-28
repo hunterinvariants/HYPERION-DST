@@ -36,6 +36,18 @@ evidence index and the precise bounds of every claim.
 - bounded TLA+ model covering election, replication, commit, snapshots, membership, and crash recovery;
 - versioned CRC32C peer/client protocol, TCP multi-process service, replicated deduplication, ReadIndex reads, bounded backpressure, health/metrics, and backup/restore.
 
+## What CI verifies on every push
+
+- `go test ./... -race -count=1`, `go vet`, the WAL encode benchmark, and a 1,000-seed sweep;
+- the registered io_uring / `O_DIRECT` / `WRITE_FIXED` / CQE / `FSYNC` integration tests, after probing that the runner's kernel allows io_uring;
+- the bounded TLC model check;
+- a reduced Jepsen/Knossos linearizability run against a five-process loopback cluster, with the history uploaded as a build artifact;
+- the BPF object build and the chaos controller build.
+
+Live XDP/TC injection, the networked five-process gate, the full Jepsen
+workload under network partition, and the NVMe measurements are host-specific
+and are not run by CI. Those are the `sentinel` and GCP results below.
+
 ## Verified Linux baseline
 
 On the `sentinel` Linux host, the following gates passed:
@@ -49,7 +61,7 @@ On the `sentinel` Linux host, the following gates passed:
 - complete `go test ./... -race -count=1` suite;
 - five-process Phase 5 failover, health, metrics, backup/restore gate;
 - bounded live Jepsen/Knossos workload under process and TC network faults: `valid? true`;
-- bounded TLC model: 46,667,923 states generated, 6,121,927 distinct, no invariant violation.
+- bounded TLC model: 74,698,942 states generated, 9,560,875 distinct, no invariant violation.
 
 Measured durable block writes on ext4 over `/dev/sda2`:
 

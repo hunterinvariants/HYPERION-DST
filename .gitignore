@@ -5,3 +5,7 @@
 *.out
 
 /.gocache/
+
+# Jepsen: local runs are throwaway; the checked-in Sentinel history is force-added.
+/jepsen/store/*
+!/jepsen/store/README.md

@@ -27,7 +27,7 @@ Updated: 2026-07-28
 | Snapshot format | checksummed encode/decode and torn-image rejection | unit tests |
 | Membership | old/new joint-majority calculation | unit tests |
 | Tooling | seed sweeper, race suite, fuzz target, CI | executable commands/workflows |
-| Formal | bounded election, append, commit, snapshot, membership, and crash TLA+ model | 6,121,927 distinct states; all invariants pass |
+| Formal | bounded election, append, persist, commit, snapshot, membership, and durable-crash TLA+ model | 9,560,875 distinct states; all seven invariants pass |
 | Service | versioned peer/client protocol and multi-process TCP cluster | protocol and three-process restart tests |
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
@@ -49,8 +49,24 @@ Additional measured evidence:
 - GCP Local SSD NVMe gate: 10,000 durable operations, p50 95.074 us,
   p99 132.080 us, max 551.414 us; race, TLC, and 100x integration gates pass.
 - Phase 6 Sentinel gate: ENOSPC/EIO/corruption/restart/SIGKILL pass;
-  Jepsen/Knossos `valid? true`; bounded TLC 46,667,923 generated and
-  6,121,927 distinct states with no invariant violation.
+  Jepsen/Knossos `valid? true`; bounded TLC 74,698,942 generated and
+  9,560,875 distinct states with no invariant violation.
+
+## Continuous coverage
+
+Which gates run automatically on every push, and which are host-specific:
+
+| Gate | Where |
+|---|---|
+| `go test ./... -race`, vet, WAL benchmark, 1,000-seed sweep | CI (`ci.yml`) |
+| registered io_uring, `O_DIRECT`, `WRITE_FIXED`, CQE, `FSYNC` integration | CI (`ci.yml`, after a capability probe) and Sentinel |
+| bounded TLC model check | CI (`formal.yml`) |
+| reduced Jepsen/Knossos linearizability, process faults, loopback cluster | CI (`jepsen.yml`), history uploaded as an artifact |
+| BPF compile, chaos controller build | CI (`kernel.yml`) |
+| XDP/TC verifier load, live netns injection and cleanup | Sentinel only |
+| five-process networked failover, backup/restore | Sentinel only |
+| full Jepsen workload under TC network partition | Sentinel only |
+| NVMe durability measurements | named GCP configuration only |
 
 ## Post-release engineering backlog
 
