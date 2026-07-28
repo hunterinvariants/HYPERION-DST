@@ -36,4 +36,5 @@ type Message struct {
 	Commit   uint64
 	Reject   bool
 	Match    uint64
+	Context  uint64
 }

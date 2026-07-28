@@ -22,6 +22,10 @@ type Node struct {
 	outbound    []Message
 	store       StableStore
 	Faulted     bool
+	readContext uint64
+	readAckMask uint64
+	readIndex   uint64
+	readReady   bool
 }
 
 func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
@@ -106,7 +110,7 @@ func (n *Node) Step(m Message) {
 		if !n.persistHardState(HardState{Term: m.Term}) {
 			return
 		}
-		n.State, n.Term, n.VotedFor, n.Leader = Follower, m.Term, 0, 0
+		n.State, n.Term, n.VotedFor, n.Leader, n.readReady = Follower, m.Term, 0, 0, false
 	}
 	switch m.Type {
 	case MsgPreVote:
@@ -141,6 +145,30 @@ func (n *Node) Step(m Message) {
 // TransferLeadership asks an up-to-date voter to start an immediate election.
 // The transfer is rejected until the target has durably acknowledged the
 // leader's complete log.
+// StartReadIndex begins a quorum-confirmed linearizable read barrier. Only one
+// read barrier is active at a time; callers provide a non-zero unique context.
+func (n *Node) StartReadIndex(context uint64) bool {
+	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 || n.Log[n.Commit].Term != n.Term {
+		return false
+	}
+	n.readContext, n.readAckMask = context, nodeBit(n.ID)
+	n.readReady = n.quorumMask(n.readAckMask)
+	if n.readReady {
+		n.readIndex = n.Commit
+	}
+	for _, p := range n.Peers {
+		n.appendToContext(p, context)
+	}
+	return true
+}
+
+// ReadIndex returns the commit index after the matching barrier reached quorum.
+func (n *Node) ReadIndex(context uint64) (uint64, bool) {
+	if n.State != Leader || context != n.readContext || !n.readReady {
+		return 0, false
+	}
+	return n.readIndex, true
+}
 func (n *Node) TransferLeadership(target uint32) bool {
 	if n.State != Leader || target == n.ID || !n.isVoter(target) {
 		return false
@@ -200,10 +228,16 @@ func (n *Node) onAppend(m Message) {
 		}
 	}
 	n.send(Message{Type: MsgAppendResponse, From: n.ID, To: m.From,
-		Term: n.Term, Reject: reject, Match: uint64(len(n.Log) - 1)})
+		Term: n.Term, Reject: reject, Match: uint64(len(n.Log) - 1), Context: m.Context})
 }
 
 func (n *Node) onAppendResponse(m Message) {
+	if n.State == Leader && m.Term == n.Term && !m.Reject && m.Context != 0 && m.Context == n.readContext && n.isVoter(m.From) {
+		n.readAckMask |= nodeBit(m.From)
+		if n.quorumMask(n.readAckMask) {
+			n.readIndex, n.readReady = n.Commit, true
+		}
+	}
 	if n.State != Leader || m.Term != n.Term || m.Match >= uint64(len(n.Log)) {
 		return
 	}
@@ -266,6 +300,10 @@ func (n *Node) broadcastAppend() {
 }
 
 func (n *Node) appendTo(p uint32) {
+	n.appendToContext(p, 0)
+}
+
+func (n *Node) appendToContext(p uint32, context uint64) {
 	next := n.next[p]
 	if next > uint64(len(n.Log)) {
 		next = uint64(len(n.Log))
@@ -276,7 +314,7 @@ func (n *Node) appendTo(p uint32) {
 	}
 	prev := next - 1
 	m := Message{Type: MsgAppend, From: n.ID, To: p, Term: n.Term,
-		LogIndex: prev, LogTerm: n.Log[prev].Term, Commit: n.Commit}
+		LogIndex: prev, LogTerm: n.Log[prev].Term, Commit: n.Commit, Context: context}
 	if next < uint64(len(n.Log)) {
 		m.Entry, m.HasEntry = n.Log[next], true
 	}
