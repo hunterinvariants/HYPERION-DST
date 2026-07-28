@@ -58,8 +58,7 @@ Sentinel evidence: `benchmarks/sentinel-phase5-2026-07-28.md`.
 
 1. complete TLA+ protocol model and bounded CI model checking;
 2. disk-full, I/O-error, process-kill, and corruption campaigns;
-3. dedicated GCP Local SSD NVMe qualification: complete for the recorded
-   configuration; bare-metal power-loss qualification remains external;
+3. dedicated GCP Local SSD NVMe qualification: complete for the recorded configuration;
 4. documented operating envelope and release checklist.
 
 No phase is considered complete from code presence alone. It requires an

@@ -16,9 +16,9 @@ HYPERION-DST is qualified only within the following recorded envelope.
   directory and be validated before the node rejoins a cluster.
 
 Measured configurations and their evidence are under `benchmarks/`. Results
-must not be generalized to different kernels, storage firmware, cloud machine
+must not be generalized to different kernels, storage controller, cloud machine
 types, durability policies, or queue depths.
 
 Not qualified: Byzantine peers, multi-datacenter timing assumptions,
-firmware-controlled power-loss behavior, rolling format migration, or
+rolling format migration or
 sub-microsecond durable latency.

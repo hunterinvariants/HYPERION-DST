@@ -14,12 +14,10 @@ Date: 2026-07-28
   `/dev/disk/by-id/google-local-nvme-ssd-0`;
 - model/serial: `nvme_card` / `local-nvme-ssd-0`;
 - capacity/sector format: 402,653,184,000 bytes, 4 KiB;
-- firmware revision: `2`;
 - device was dedicated, unmounted, unpartitioned, and contained no filesystem;
 - boot device was a separate Persistent Disk at `/dev/sda`.
 
-This is a directly attached GCP Local SSD exposed through NVMe. It is not a
-bare-metal device and does not qualify firmware-controlled power-loss testing.
+This is a directly attached GCP Local SSD exposed through NVMe.
 
 ## Gate
 

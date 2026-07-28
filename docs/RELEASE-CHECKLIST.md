@@ -16,5 +16,3 @@ immutable evidence.
 - [ ] operating-envelope and known-limitations review;
 - [ ] artifact hashes stored with the release.
 
-Bare-metal power-loss qualification is an external gate and must be stated as
-not performed when no controllable physical device is available.

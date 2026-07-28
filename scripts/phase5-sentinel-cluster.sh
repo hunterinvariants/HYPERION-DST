@@ -80,7 +80,7 @@ leader=""
 for attempt in $(seq 1 100); do
   for id in 1 2 3 4 5; do
     if "$RUN/hyperionctl" -address "$PREFIX.$((10+id)):9200" \
-      -operation put -client 1 -request 1 -key 1 -value 1 >/dev/null 2>&1; then
+      -operation put -client 1 -request 1 -key 999 -value 1 >/dev/null 2>&1; then
       leader=$id
       break 2
     fi
@@ -104,7 +104,7 @@ for attempt in $(seq 1 150); do
   for id in 1 2 3 4 5; do
     [[ $id == "$leader" ]] && continue
     if "$RUN/hyperionctl" -address "$PREFIX.$((10+id)):9200" \
-      -operation get -client 2 -request "$attempt" -key 1 |
+      -operation get -client 2 -request "$attempt" -key 999 |
       grep -q 'status=0.*value=1'; then
       replacement=$id
       break 2

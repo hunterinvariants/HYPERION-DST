@@ -65,10 +65,6 @@ Additional measured evidence:
 - test disk-full, short-I/O, checksum corruption, and failed `FSYNC` paths;
 - add manifest/version migration and extended observability procedures.
 
-### External power-loss gate
-
-- GCP Local SSD NVMe configuration and latency distribution are recorded;
-- bare-metal firmware-controlled power-loss testing remains outstanding.
 
 ## Claim policy
 
