@@ -7,7 +7,8 @@ Updated: 2026-07-28
 | Area | Capability | Evidence |
 |---|---|---|
 | DST | deterministic clock, network, seeds, crash/restart | reproducibility and committed-prefix tests |
-| Raft | elections, replication, commit | randomized safety tests |
+| Raft | pre-vote, duplicate-safe elections, replication, commit | randomized safety tests |
+| DST storage | bit-rot, misdirected writes, phantom prefixes | seeded fault/recovery tests |
 | Persistence | term/vote before vote response | fail-stop ordering tests |
 | Persistence | entry durable before AppendEntries ACK | fail-stop ordering tests |
 | WAL | CRC32C, monotonic sequence, torn-tail recovery | exhaustive byte-cut tests |
@@ -27,6 +28,7 @@ Additional measured evidence:
 
 - 1,000 seeds x 1,000 virtual ticks with periodic restart: pass;
 - WAL encode benchmark: 0 B/op, 0 allocs/op;
+- Raft heartbeat Step: 0 allocations across 10,000 measured runs;
 - 1,000 durable `WRITE_FIXED + FSYNC` operations: 1,844 ops/s;
 - latency: p50 533.815 us, p99 705.035 us, max 1.382461 ms.
 
@@ -40,7 +42,7 @@ Additional measured evidence:
 - encode configuration entries in the replicated log;
 - drive joint configuration and final configuration as two committed transitions;
 - add ReadIndex or a rigorously bounded leader-lease protocol;
-- add pre-vote, leadership transfer, and snapshot catch-up for lagging followers.
+- add leadership transfer and snapshot catch-up for lagging followers.
 
 ### P0: usable distributed service
 

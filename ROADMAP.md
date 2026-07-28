@@ -3,7 +3,7 @@
 ## Phase 1 - deterministic core: complete
 
 - virtual time and seeded network scheduler;
-- Raft election, replication, commit, and invariant checking;
+- Raft pre-vote, duplicate-safe election, replication, commit, and invariant checking;
 - reproducible crash/restart seed sweeps.
 
 ## Phase 2 - durability foundation: complete
@@ -32,7 +32,7 @@ sweeps, backpressure, and physical NVMe measurements.
 3. safe log/WAL compaction;
 4. replicated joint and final configuration entries;
 5. ReadIndex or proven leases;
-6. pre-vote and leadership transfer.
+6. leadership transfer.
 
 ## Phase 5 - distributed product surface: planned
 

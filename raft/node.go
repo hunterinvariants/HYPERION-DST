@@ -3,23 +3,25 @@ package raft
 const outboundCapacity = 4096
 
 type Node struct {
-	ID       uint32
-	Peers    []uint32
-	State    State
-	Term     uint64
-	VotedFor uint32
-	Leader   uint32
-	Log      []Entry
-	Commit   uint64
-	Applied  uint64
-	timeout  uint64
-	elapsed  uint64
-	votes    int
-	next     map[uint32]uint64
-	match    map[uint32]uint64
-	outbound []Message
-	store    StableStore
-	Faulted  bool
+	ID          uint32
+	Peers       []uint32
+	State       State
+	Term        uint64
+	VotedFor    uint32
+	Leader      uint32
+	Log         []Entry
+	Commit      uint64
+	Applied     uint64
+	timeout     uint64
+	elapsed     uint64
+	voteMask    uint64
+	preVoteMask uint64
+	preVoteTerm uint64
+	next        map[uint32]uint64
+	match       map[uint32]uint64
+	outbound    []Message
+	store       StableStore
+	Faulted     bool
 }
 
 func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
@@ -27,6 +29,14 @@ func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
 }
 
 func NewNodeWithStore(id uint32, peers []uint32, electionTimeout uint64, store StableStore) *Node {
+	seen := nodeBit(id)
+	for _, peer := range peers {
+		bit := nodeBit(peer)
+		if seen&bit != 0 {
+			panic("raft: duplicate node ID")
+		}
+		seen |= bit
+	}
 	return &Node{
 		ID: id, Peers: append([]uint32(nil), peers...), State: Follower,
 		Log: []Entry{{}}, timeout: electionTimeout,
@@ -50,6 +60,21 @@ func (n *Node) Tick() {
 		return
 	}
 	if n.elapsed >= n.timeout {
+		n.startPreVote()
+	}
+}
+
+func (n *Node) startPreVote() {
+	n.elapsed = 0
+	n.preVoteTerm = n.Term + 1
+	n.Leader = 0
+	n.preVoteMask = nodeBit(n.ID)
+	last := uint64(len(n.Log) - 1)
+	for _, p := range n.Peers {
+		n.send(Message{Type: MsgPreVote, From: n.ID, To: p, Term: n.preVoteTerm,
+			LogIndex: last, LogTerm: n.Log[last].Term})
+	}
+	if n.quorumMask(n.preVoteMask) {
 		n.startElection()
 	}
 }
@@ -59,13 +84,15 @@ func (n *Node) startElection() {
 	if !n.persistHardState(HardState{Term: nextTerm, VotedFor: n.ID}) {
 		return
 	}
-	n.State, n.Term, n.VotedFor, n.votes, n.elapsed = Candidate, nextTerm, n.ID, 1, 0
+	n.State, n.Term, n.VotedFor, n.elapsed = Candidate, nextTerm, n.ID, 0
+	n.voteMask = nodeBit(n.ID)
+	n.preVoteMask = 0
 	last := uint64(len(n.Log) - 1)
 	for _, p := range n.Peers {
 		n.send(Message{Type: MsgRequestVote, From: n.ID, To: p, Term: n.Term,
 			LogIndex: last, LogTerm: n.Log[last].Term})
 	}
-	if n.quorum(n.votes) {
+	if n.quorumMask(n.voteMask) {
 		n.becomeLeader()
 	}
 }
@@ -74,19 +101,29 @@ func (n *Node) Step(m Message) {
 	if n.Faulted {
 		return
 	}
-	if m.Term > n.Term {
+	isPreVote := m.Type == MsgPreVote || m.Type == MsgPreVoteResponse
+	if !isPreVote && m.Term > n.Term {
 		if !n.persistHardState(HardState{Term: m.Term}) {
 			return
 		}
 		n.State, n.Term, n.VotedFor, n.Leader = Follower, m.Term, 0, 0
 	}
 	switch m.Type {
+	case MsgPreVote:
+		n.onPreVote(m)
+	case MsgPreVoteResponse:
+		if n.State != Leader && n.isVoter(m.From) && m.Term == n.Term+1 && m.Term == n.preVoteTerm && !m.Reject {
+			n.preVoteMask |= nodeBit(m.From)
+			if n.quorumMask(n.preVoteMask) {
+				n.startElection()
+			}
+		}
 	case MsgRequestVote:
 		n.onVote(m)
 	case MsgRequestVoteResponse:
-		if n.State == Candidate && m.Term == n.Term && !m.Reject {
-			n.votes++
-			if n.quorum(n.votes) {
+		if n.State == Candidate && n.isVoter(m.From) && m.Term == n.Term && !m.Reject {
+			n.voteMask |= nodeBit(m.From)
+			if n.quorumMask(n.voteMask) {
 				n.becomeLeader()
 			}
 		}
@@ -97,11 +134,20 @@ func (n *Node) Step(m Message) {
 	}
 }
 
+func (n *Node) onPreVote(m Message) {
+	last := uint64(len(n.Log) - 1)
+	upToDate := m.LogTerm > n.Log[last].Term ||
+		(m.LogTerm == n.Log[last].Term && m.LogIndex >= last)
+	leaderActive := n.Leader != 0 && n.elapsed < n.timeout
+	grant := n.isVoter(m.From) && m.Term >= n.Term+1 && upToDate && !leaderActive
+	n.send(Message{Type: MsgPreVoteResponse, From: n.ID, To: m.From,
+		Term: m.Term, Reject: !grant})
+}
 func (n *Node) onVote(m Message) {
 	last := uint64(len(n.Log) - 1)
 	upToDate := m.LogTerm > n.Log[last].Term ||
 		(m.LogTerm == n.Log[last].Term && m.LogIndex >= last)
-	grant := m.Term == n.Term && (n.VotedFor == 0 || n.VotedFor == m.From) && upToDate
+	grant := n.isVoter(m.From) && m.Term == n.Term && (n.VotedFor == 0 || n.VotedFor == m.From) && upToDate
 	if grant {
 		if !n.persistHardState(HardState{Term: n.Term, VotedFor: m.From}) {
 			return
@@ -241,6 +287,35 @@ func (n *Node) Apply() []uint64 {
 }
 
 func (n *Node) quorum(v int) bool { return v >= (len(n.Peers)+1)/2+1 }
+
+func (n *Node) quorumMask(mask uint64) bool {
+	count := 0
+	for id := range uint32(64) {
+		if mask&(uint64(1)<<id) != 0 {
+			count++
+		}
+	}
+	return n.quorum(count)
+}
+
+func (n *Node) isVoter(id uint32) bool {
+	if id == n.ID {
+		return true
+	}
+	for _, peer := range n.Peers {
+		if peer == id {
+			return true
+		}
+	}
+	return false
+}
+
+func nodeBit(id uint32) uint64 {
+	if id == 0 || id > 64 {
+		panic("raft: node IDs must be in 1..64")
+	}
+	return uint64(1) << (id - 1)
+}
 func (n *Node) persistHardState(h HardState) bool {
 	if err := n.store.SaveHardState(h); err != nil {
 		n.failStorage()

@@ -27,6 +27,18 @@ for all t in T:
   |{n : Leader(n, t)}| <= 1
 ```
 
+## Pre-vote and duplicate resistance
+
+Election timeout starts a non-persistent pre-vote for `currentTerm + 1`. Receiving
+or granting a pre-vote never advances durable term or vote state. Only a
+majority of distinct configured voters starts a real election. Vote identities
+are tracked in a fixed 64-bit voter mask, so duplicated or unknown responses
+cannot form a quorum. A node with a recently active leader rejects disruptive
+pre-votes.
+
+Consequently, an isolated minority can retry pre-vote indefinitely without
+increasing the term observed by the healthy majority.
+
 ## Log matching
 
 AppendEntries is accepted at index `i` only when the follower has the same term

@@ -14,10 +14,11 @@ criteria are tracked in [STATUS.md](STATUS.md).
 ## What works today
 
 - deterministic virtual time, seeded scheduling, message delay/drop, and restart;
-- Raft elections, replication, commit, durable term/vote, and durable entry ACKs;
+- Raft pre-vote, elections, duplicate-safe voting, replication, commit, durable term/vote, and durable entry ACKs;
 - fail-stop behavior when stable storage rejects a write;
 - fixed 48-byte CRC32C WAL records, sequence validation, torn-tail recovery;
 - crash/restart reconstruction exclusively from durable WAL state;
+- deterministic bit-rot, misdirected-write, and phantom-prefix storage faults;
 - registered-file and registered-buffer `io_uring` data path using `WRITE_FIXED`;
 - CQE identity, error, and short-write validation followed by a separate `FSYNC`;
 - checksummed WAL records stored in aligned 4096-byte `O_DIRECT` blocks;

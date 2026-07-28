@@ -16,7 +16,9 @@ type Entry struct {
 type MessageType uint8
 
 const (
-	MsgRequestVote MessageType = iota
+	MsgPreVote MessageType = iota
+	MsgPreVoteResponse
+	MsgRequestVote
 	MsgRequestVoteResponse
 	MsgAppend
 	MsgAppendResponse
