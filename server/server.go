@@ -219,6 +219,11 @@ func (s *Server) handleRequest(incoming request) {
 		return
 	}
 	if req.Operation == protocol.ClientGet {
+		if len(s.reads) != 0 {
+			s.metrics.Busy.Add(1)
+			incoming.reply <- s.response(protocol.StatusBusy, req, 0)
+			return
+		}
 		contextID := (req.ClientID << 32) ^ req.RequestID
 		if contextID == 0 || !s.node.StartReadIndex(contextID) {
 			incoming.reply <- s.response(protocol.StatusBusy, req, 0)

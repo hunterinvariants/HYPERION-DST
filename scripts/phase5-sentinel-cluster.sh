@@ -116,7 +116,7 @@ if command -v lein >/dev/null; then
   ) &
   chaos_pid=$!
   export HYPERION_CLIENTS="$PREFIX.11:9200,$PREFIX.12:9200,$PREFIX.13:9200,$PREFIX.14:9200,$PREFIX.15:9200"
-  (cd "$ROOT/jepsen" && lein run test --time-limit 60)
+  (cd "$ROOT/jepsen" && lein run test --no-ssh --time-limit 60)
   wait "$chaos_pid"
 else
   echo "lein is required for the Jepsen/Knossos gate" >&2

@@ -117,10 +117,7 @@
                           (gen/stagger 0.01)
                           (gen/time-limit (:time-limit opts 60)))}))
 
-(def cli-opts
-  {"test" {:opt-spec [[nil "--time-limit SECONDS" "workload duration"
-                       :default 60 :parse-fn #(Long/parseLong %)]]
-           :run hyperion-test}})
-
 (defn -main [& args]
-  (cli/run! cli-opts args))
+  (cli/run! (merge (cli/single-test-cmd {:test-fn hyperion-test})
+                   (cli/serve-cmd))
+            args))
