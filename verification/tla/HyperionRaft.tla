@@ -75,12 +75,11 @@ Replicate(leader, follower) ==
   /\ log' = [log EXCEPT ![follower] = log[leader]]
   /\ term' = [term EXCEPT ![follower] = term[leader]]
   /\ durableTerm' = [durableTerm EXCEPT ![follower] = term[leader]]
-  /\ votedFor' = [votedFor EXCEPT ![follower] = Nil]
-  /\ durableVote' = [durableVote EXCEPT ![follower] = Nil]
   /\ role' = [role EXCEPT ![follower] = "Follower"]
   /\ commitIndex' = [commitIndex EXCEPT
        ![follower] = Min2(commitIndex[leader], Len(log[leader]))]
-  /\ UNCHANGED <<votes, snapshotIndex, configOld, configNew>>
+  /\ UNCHANGED <<votedFor, durableVote, votes, snapshotIndex,
+                 configOld, configNew>>
 
 Commit(leader, i) ==
   LET acks == {n \in Nodes : Prefix(log[n], log[leader], i)} IN
