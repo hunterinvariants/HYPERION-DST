@@ -131,9 +131,28 @@ func (n *Node) Step(m Message) {
 		n.onAppend(m)
 	case MsgAppendResponse:
 		n.onAppendResponse(m)
+	case MsgTimeoutNow:
+		if n.State == Follower && m.Term == n.Term && m.From == n.Leader {
+			n.startElection()
+		}
 	}
 }
 
+// TransferLeadership asks an up-to-date voter to start an immediate election.
+// The transfer is rejected until the target has durably acknowledged the
+// leader's complete log.
+func (n *Node) TransferLeadership(target uint32) bool {
+	if n.State != Leader || target == n.ID || !n.isVoter(target) {
+		return false
+	}
+	last := uint64(len(n.Log) - 1)
+	if n.match[target] < last {
+		n.appendTo(target)
+		return false
+	}
+	n.send(Message{Type: MsgTimeoutNow, From: n.ID, To: target, Term: n.Term})
+	return true
+}
 func (n *Node) onPreVote(m Message) {
 	last := uint64(len(n.Log) - 1)
 	upToDate := m.LogTerm > n.Log[last].Term ||

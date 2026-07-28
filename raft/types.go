@@ -22,6 +22,7 @@ const (
 	MsgRequestVoteResponse
 	MsgAppend
 	MsgAppendResponse
+	MsgTimeoutNow
 )
 
 type Message struct {
