@@ -60,6 +60,20 @@ func NewNodeWithStore(id uint32, peers []uint32, electionTimeout uint64, store S
 	}
 }
 
+// VoterMasks returns the committed C_old and optional C_new bitsets.
+func (n *Node) VoterMasks() (uint64, uint64) { return n.votersOld, n.votersNew }
+
+// LastIndex returns the absolute index of the final retained log entry.
+func (n *Node) LastIndex() uint64 { return n.lastIndex() }
+
+// EntryAt returns an entry by absolute index, including the compacted base.
+func (n *Node) EntryAt(index uint64) (Entry, bool) {
+	offset, ok := n.offset(index)
+	if !ok {
+		return Entry{}, false
+	}
+	return n.Log[offset], true
+}
 func (n *Node) lastIndex() uint64 {
 	return n.BaseIndex + uint64(len(n.Log)) - 1
 }
@@ -189,11 +203,6 @@ func (n *Node) Step(m Message) {
 	}
 }
 
-// TransferLeadership asks an up-to-date voter to start an immediate election.
-// The transfer is rejected until the target has durably acknowledged the
-// leader's complete log.
-// StartReadIndex begins a quorum-confirmed linearizable read barrier. Only one
-// read barrier is active at a time; callers provide a non-zero unique context.
 // Compact publishes a durable state-machine snapshot before discarding its
 // covered log prefix. The entry at index remains as the compacted-base term.
 func (n *Node) Compact(index uint64, state []byte) bool {
@@ -271,6 +280,9 @@ func (n *Node) onInstallSnapshotResponse(m Message) {
 		n.appendTo(m.From)
 	}
 }
+
+// StartReadIndex begins a quorum-confirmed linearizable read barrier. Only one
+// read barrier is active at a time; callers provide a non-zero unique context.
 func (n *Node) StartReadIndex(context uint64) bool {
 	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 || n.termAtMust(n.Commit) != n.Term {
 		return false
@@ -293,6 +305,9 @@ func (n *Node) ReadIndex(context uint64) (uint64, bool) {
 	}
 	return n.readIndex, true
 }
+
+// TransferLeadership asks an up-to-date voter to start an immediate election.
+// The transfer is rejected until the target durably acknowledges the full log.
 func (n *Node) TransferLeadership(target uint32) bool {
 	if n.State != Leader || target == n.ID || !n.isVoter(target) {
 		return false
@@ -583,7 +598,10 @@ func (n *Node) Apply() []uint64 {
 	out := make([]uint64, 0, n.Commit-n.Applied)
 	for n.Applied < n.Commit {
 		n.Applied++
-		out = append(out, n.entryAt(n.Applied).Command)
+		entry := n.entryAt(n.Applied)
+		if entry.Kind == EntryNormal {
+			out = append(out, entry.Command)
+		}
 	}
 	return out
 }

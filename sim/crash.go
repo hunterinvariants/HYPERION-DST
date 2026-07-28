@@ -22,10 +22,19 @@ func (s *Simulator) CrashRestart(id uint32) error {
 	if err != nil {
 		return err
 	}
-	hard, entries := store.State()
+	hard, base, entries := store.StateWithBase()
 	peers := append([]uint32(nil), node.Peers...)
-	s.disks[id], s.stores[id] = rebootedDisk, store
-	s.Nodes[id] = raft.NewRecoveredNode(id, peers, 8+uint64(id*2), store, hard, entries)
+	stable := &stableStore{wal: store, snapshot: s.stores[id].snapshot}
+	s.disks[id], s.stores[id] = rebootedDisk, stable
+	if base != 0 {
+		if stable.snapshot.LastIndex != base {
+			return fmt.Errorf("sim: snapshot/WAL base mismatch %d != %d", stable.snapshot.LastIndex, base)
+		}
+		s.Nodes[id] = raft.NewRecoveredNodeWithSnapshot(
+			id, peers, 8+uint64(id*2), stable, hard, stable.snapshot, entries[1:])
+	} else {
+		s.Nodes[id] = raft.NewRecoveredNode(id, peers, 8+uint64(id*2), stable, hard, entries)
+	}
 
 	kept := s.queue[:0]
 	for _, event := range s.queue {

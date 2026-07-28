@@ -16,9 +16,10 @@ func (s *Simulator) CheckSafety() error {
 			}
 			leaders[node.Term] = id
 		}
-		if node.Commit >= uint64(len(node.Log)) || node.Applied > node.Commit {
-			return fmt.Errorf("node %d invalid indexes applied=%d commit=%d log=%d",
-				id, node.Applied, node.Commit, len(node.Log))
+		if node.Commit < node.BaseIndex || node.Commit > node.LastIndex() ||
+			node.Applied < node.BaseIndex || node.Applied > node.Commit {
+			return fmt.Errorf("node %d invalid indexes base=%d applied=%d commit=%d last=%d",
+				id, node.BaseIndex, node.Applied, node.Commit, node.LastIndex())
 		}
 	}
 	for a, na := range s.Nodes {
@@ -26,9 +27,12 @@ func (s *Simulator) CheckSafety() error {
 			if b <= a {
 				continue
 			}
+			first := max(na.BaseIndex, nb.BaseIndex)
 			limit := min(na.Commit, nb.Commit)
-			for index := uint64(1); index <= limit; index++ {
-				if na.Log[index] != nb.Log[index] {
+			for index := first; index <= limit; index++ {
+				ea, oka := na.EntryAt(index)
+				eb, okb := nb.EntryAt(index)
+				if !oka || !okb || ea.Term != eb.Term || (index > first && ea != eb) {
 					return fmt.Errorf("nodes %d/%d disagree at committed index %d", a, b, index)
 				}
 			}

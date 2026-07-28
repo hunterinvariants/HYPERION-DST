@@ -50,8 +50,9 @@ func Open(device wal.Device) (*Store, error) {
 			continue
 		}
 		if e.Index == hardStateIndex {
-			if e.Term < s.hard.Term {
-				return nil, fmt.Errorf("raftwal: hard-state term regression")
+			if e.Term < s.hard.Term || e.OldVoters < s.hard.Commit ||
+				(e.Term == s.hard.Term && s.hard.VotedFor != 0 && uint32(e.Command) != s.hard.VotedFor) {
+				return nil, fmt.Errorf("raftwal: hard-state regression")
 			}
 			s.hard = raft.HardState{Term: e.Term, VotedFor: uint32(e.Command), Commit: e.OldVoters}
 			continue
@@ -73,8 +74,9 @@ func Open(device wal.Device) (*Store, error) {
 }
 
 func (s *Store) SaveHardState(h raft.HardState) error {
-	if h.Term < s.hard.Term || h.Commit < s.hard.Commit {
-		return fmt.Errorf("raftwal: hard-state term regression")
+	if h.Term < s.hard.Term || h.Commit < s.hard.Commit ||
+		(h.Term == s.hard.Term && s.hard.VotedFor != 0 && h.VotedFor != s.hard.VotedFor) {
+		return fmt.Errorf("raftwal: hard-state regression")
 	}
 	if err := s.append(storage.Entry{
 		Index: hardStateIndex, Term: h.Term, Command: uint64(h.VotedFor), OldVoters: h.Commit,

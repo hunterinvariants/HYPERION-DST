@@ -28,7 +28,7 @@ type Config struct {
 type Simulator struct {
 	Now     uint64
 	Nodes   map[uint32]*raft.Node
-	stores  map[uint32]*raftwal.Store
+	stores  map[uint32]*stableStore
 	disks   map[uint32]*wal.MemoryDevice
 	rng     *rand.Rand
 	drop    int
@@ -44,7 +44,7 @@ func New(c Config) *Simulator {
 		panic("sim: Nodes must be positive")
 	}
 	s := &Simulator{Nodes: make(map[uint32]*raft.Node, c.Nodes),
-		stores: make(map[uint32]*raftwal.Store, c.Nodes),
+		stores: make(map[uint32]*stableStore, c.Nodes),
 		disks:  make(map[uint32]*wal.MemoryDevice, c.Nodes),
 		rng:    rand.New(rand.NewSource(c.Seed)), drop: c.DropPermille,
 		delay: c.MaxDelay, scratch: make([]raft.Message, 0, 4096)}
@@ -62,8 +62,9 @@ func New(c Config) *Simulator {
 		if err != nil {
 			panic(err)
 		}
-		s.disks[id], s.stores[id] = disk, store
-		s.Nodes[id] = raft.NewNodeWithStore(id, peers, 8+uint64(i*2), store)
+		stable := &stableStore{wal: store}
+		s.disks[id], s.stores[id] = disk, stable
+		s.Nodes[id] = raft.NewNodeWithStore(id, peers, 8+uint64(i*2), stable)
 	}
 	return s
 }
@@ -103,6 +104,34 @@ func (s *Simulator) Propose(command uint64) bool {
 	return false
 }
 
+// Compact snapshots a node at its applied index. The caller supplies the
+// deterministic state-machine image represented by that index.
+func (s *Simulator) Compact(id uint32, state []byte) bool {
+	node, ok := s.Nodes[id]
+	if !ok || node.Applied <= node.BaseIndex {
+		return false
+	}
+	return node.Compact(node.Applied, state)
+}
+func (s *Simulator) ProposeJoint(voters []uint32) bool {
+	for id := uint32(1); id <= uint32(len(s.Nodes)); id++ {
+		if s.Nodes[id].ProposeJoint(voters) {
+			s.collect()
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Simulator) ProposeFinal() bool {
+	for id := uint32(1); id <= uint32(len(s.Nodes)); id++ {
+		if s.Nodes[id].ProposeFinal() {
+			s.collect()
+			return true
+		}
+	}
+	return false
+}
 func (s *Simulator) Leader() uint32 {
 	for id := uint32(1); id <= uint32(len(s.Nodes)); id++ {
 		if s.Nodes[id].State == raft.Leader {
