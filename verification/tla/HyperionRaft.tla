@@ -16,6 +16,10 @@ JointQuorum(acks) == Quorum(configOld, acks) /\
                        (configNew = {} \/ Quorum(configNew, acks))
 Prefix(a, b, i) == i = 0 \/
   (Len(a) >= i /\ Len(b) >= i /\ SubSeq(a, 1, i) = SubSeq(b, 1, i))
+LastTerm(entries) == IF Len(entries) = 0 THEN 0 ELSE entries[Len(entries)]
+UpToDate(candidate, voter) ==
+  LastTerm(candidate) > LastTerm(voter) \/
+  (LastTerm(candidate) = LastTerm(voter) /\ Len(candidate) >= Len(voter))
 
 Init ==
   /\ term = [n \in Nodes |-> 0]
@@ -44,6 +48,7 @@ GrantVote(voter, candidate) ==
   /\ role[candidate] = "Candidate"
   /\ term[voter] <= term[candidate]
   /\ votedFor[voter] = Nil \/ votedFor[voter] = candidate
+  /\ UpToDate(log[candidate], log[voter])
   /\ Prefix(log[candidate], log[voter], commitIndex[voter])
   /\ term' = [term EXCEPT ![voter] = term[candidate]]
   /\ durableTerm' = [durableTerm EXCEPT ![voter] = term[candidate]]
