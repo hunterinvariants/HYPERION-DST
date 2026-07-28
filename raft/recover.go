@@ -25,6 +25,7 @@ func NewRecoveredNode(
 		return n
 	}
 	n.applyCommittedConfigurations(1, n.Commit)
+	n.rebuildPendingConfig()
 	return n
 }
 
@@ -59,5 +60,6 @@ func NewRecoveredNodeWithSnapshot(
 		return n
 	}
 	n.applyCommittedConfigurations(snapshot.LastIndex+1, n.Commit)
+	n.rebuildPendingConfig()
 	return n
 }

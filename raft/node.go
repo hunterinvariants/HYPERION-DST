@@ -338,6 +338,7 @@ func (n *Node) onAppend(m Message) {
 			at := m.LogIndex + 1
 			if offset, ok := n.offset(at); ok && n.Log[offset].Term != m.Entry.Term {
 				n.Log = n.Log[:offset]
+				n.rebuildPendingConfig()
 			}
 			if at == n.lastIndex()+1 {
 				if err := n.store.Append(at, m.Entry); err != nil {
@@ -345,6 +346,10 @@ func (n *Node) onAppend(m Message) {
 					return
 				}
 				n.Log = append(n.Log, m.Entry)
+				if m.Entry.Kind == EntryJointConfig || m.Entry.Kind == EntryFinalConfig {
+					n.pendingConfig = at
+					n.ensurePeers(m.Entry.OldVoters | m.Entry.NewVoters)
+				}
 			}
 		}
 		if m.Commit > n.Commit {
@@ -583,6 +588,30 @@ func (n *Node) Apply() []uint64 {
 	return out
 }
 
+func (n *Node) rebuildPendingConfig() {
+	n.pendingConfig = 0
+	first := max(n.Commit+1, n.BaseIndex+1)
+	for index := first; index <= n.lastIndex(); index++ {
+		kind := n.entryAt(index).Kind
+		if kind == EntryJointConfig || kind == EntryFinalConfig {
+			n.pendingConfig = index
+			entry := n.entryAt(index)
+			n.ensurePeers(entry.OldVoters | entry.NewVoters)
+		}
+	}
+}
+
+func (n *Node) effectiveVoters() (uint64, uint64) {
+	oldVoters, newVoters := n.votersOld, n.votersNew
+	first := max(n.Commit+1, n.BaseIndex+1)
+	for index := first; index <= n.lastIndex(); index++ {
+		entry := n.entryAt(index)
+		if entry.Kind == EntryJointConfig {
+			oldVoters, newVoters = entry.OldVoters, entry.NewVoters
+		}
+	}
+	return oldVoters, newVoters
+}
 func (n *Node) canCommitIndex(index uint64, acked uint64) bool {
 	oldVoters, newVoters := n.votersOld, n.votersNew
 	for pending := n.Commit + 1; pending <= index; pending++ {
@@ -610,13 +639,15 @@ func bitsSet(mask uint64) int {
 }
 
 func (n *Node) quorumMask(mask uint64) bool {
-	return majorityMask(n.votersOld, mask) &&
-		(n.votersNew == 0 || majorityMask(n.votersNew, mask))
+	oldVoters, newVoters := n.effectiveVoters()
+	return majorityMask(oldVoters, mask) &&
+		(newVoters == 0 || majorityMask(newVoters, mask))
 }
 
 func (n *Node) isVoter(id uint32) bool {
+	oldVoters, newVoters := n.effectiveVoters()
 	bit := nodeBit(id)
-	return (n.votersOld|n.votersNew)&bit != 0
+	return (oldVoters|newVoters)&bit != 0
 }
 
 func nodeBit(id uint32) uint64 {
