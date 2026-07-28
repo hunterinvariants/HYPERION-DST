@@ -117,11 +117,15 @@ InstallSnapshot(leader, follower) ==
                  durableTerm, durableVote>>
 
 BeginJoint(leader, config) ==
+  LET acks == {n \in Nodes : term[n] = term[leader] /\
+                              Prefix(log[n], log[leader], commitIndex[leader])} IN
   /\ role[leader] = "Leader"
   /\ configNew = {}
   /\ config \subseteq Nodes
   /\ config # {}
   /\ config # configOld
+  /\ Quorum(configOld, acks)
+  /\ Quorum(config, acks)
   /\ configNew' = config
   /\ UNCHANGED <<term, votedFor, role, votes, log, commitIndex,
                  snapshotIndex, configOld, durableTerm, durableVote>>
@@ -129,7 +133,8 @@ BeginJoint(leader, config) ==
 FinalizeJoint(leader) ==
   /\ role[leader] = "Leader"
   /\ configNew # {}
-  /\ JointQuorum({n \in Nodes : Prefix(log[n], log[leader], commitIndex[leader])})
+  /\ JointQuorum({n \in Nodes : term[n] = term[leader] /\
+                                  Prefix(log[n], log[leader], commitIndex[leader])})
   /\ configOld' = configNew
   /\ configNew' = {}
   /\ role' = [n \in Nodes |-> "Follower"]
