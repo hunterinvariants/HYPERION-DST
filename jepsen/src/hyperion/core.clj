@@ -112,8 +112,8 @@
           :nodes [:n1 :n2 :n3 :n4 :n5]
           :client (HyperionClient. nil nil nil)
           :model (model/register)
-          :checker (checker/compose {:linearizable (checker/linearizable)
-                                     :timeline (timeline/html)})
+          :checker (checker/compose {:linearizable (checker/linearizable {:model (model/register)})
+                                     :timeline timeline/html})
           :generator (->> (gen/mix [read-op write-op])
                           (gen/stagger 0.01)
                           (gen/time-limit (:time-limit opts 60)))}))
