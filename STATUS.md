@@ -1,4 +1,4 @@
-﻿# Project status
+# Project status
 
 Updated: 2026-07-28
 
@@ -8,6 +8,10 @@ Updated: 2026-07-28
 |---|---|---|
 | DST | deterministic clock, network, seeds, crash/restart | reproducibility and committed-prefix tests |
 | Raft | pre-vote, duplicate-safe elections, replication, commit | randomized safety tests |
+| Raft | compacted absolute indexes and durable snapshot catch-up | unit, crash/restart, DST, Sentinel io_uring gates |
+| Raft | replicated joint/final configuration transitions | dual-majority, restart, removal, and five-node DST tests |
+| Raft | quorum-confirmed ReadIndex and leadership transfer | protocol and race tests |
+| Persistence | snapshot-before-WAL-fence compaction ordering | interrupted-install recovery and replay tests |
 | DST storage | bit-rot, misdirected writes, phantom prefixes | seeded fault/recovery tests |
 | Persistence | term/vote before vote response | fail-stop ordering tests |
 | Persistence | entry durable before AppendEntries ACK | fail-stop ordering tests |
@@ -30,19 +34,12 @@ Additional measured evidence:
 - WAL encode benchmark: 0 B/op, 0 allocs/op;
 - Raft heartbeat Step: 0 allocations across 10,000 measured runs;
 - 1,000 durable `WRITE_FIXED + FSYNC` operations: 1,844 ops/s;
-- latency: p50 533.815 us, p99 705.035 us, max 1.382461 ms.
+- latency: p50 533.815 us, p99 705.035 us, max 1.382461 ms;
+- Phase 4 Sentinel race gate: pass;
+- 100x deterministic five-node Raft/DST gate: pass in 481.973 seconds;
+- 100x io_uring snapshot/compaction/recovery gate: pass.
 
 ## Remaining production gates
-
-### P0: protocol safety and completeness
-
-- add absolute log indexes and compacted-base metadata to Raft;
-- implement and persist `InstallSnapshot`, including interrupted-install recovery;
-- compact WAL/log only after a durable snapshot replacement;
-- encode configuration entries in the replicated log;
-- drive joint configuration and final configuration as two committed transitions;
-- add ReadIndex or a rigorously bounded leader-lease protocol;
-- add leadership transfer and snapshot catch-up for lagging followers.
 
 ### P0: usable distributed service
 
@@ -75,7 +72,8 @@ Additional measured evidence:
 
 ## Claim policy
 
-HYPERION-DST is currently a runnable, Linux-validated engineering prototype.
-It is not yet a production database. Full zero-allocation, sub-microsecond
-physical durability, strict serializability, and machine-checked safety must not
+HYPERION-DST has a completed, Linux-qualified Raft protocol core. It remains
+an engineering prototype rather than a production database until the Phase 5
+service surface and Phase 6 qualification gates are complete. Full
+zero-allocation, sub-microsecond physical durability, strict serializability, and machine-checked safety must not
 be claimed until their corresponding gates above have passed.

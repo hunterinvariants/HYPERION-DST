@@ -1,4 +1,4 @@
-﻿# HYPERION-DST safety specification
+# HYPERION-DST safety specification
 
 ## Model
 
@@ -97,16 +97,16 @@ State(node, recovery_time) =
   Fold(Snapshot(s), WAL[s+1 .. last_seq])
 ```
 
-The snapshot file format and WAL replay are implemented. Snapshot installation
-and Raft log compaction are still production gates.
+The snapshot file format, ordered durable replacement, InstallSnapshot,
+follower catch-up, absolute compacted indexes, and WAL compaction fences are
+implemented and covered by crash/restart and Linux io_uring acceptance tests.
 
 ## Linearizability boundary
 
-A completed write linearizes when its log entry first becomes committed. A
-linearizable read requires a quorum-confirmed ReadIndex or a proven leader
-lease. The current executable system implements replicated writes but does not
-yet expose a production client/read protocol; strict serializability is
-therefore not yet claimed.
+A completed write linearizes when its log entry first becomes committed. Raft
+implements quorum-confirmed ReadIndex barriers for linearizable reads. A
+production client protocol remains a Phase 5 gate, so end-to-end strict
+serializability is not yet claimed.
 
 For completed operations in history `H`, a valid sequential history `S` must
 preserve real-time precedence:
@@ -118,9 +118,9 @@ op1 precedes_H op2 implies op1 precedes_S op2
 ## Membership changes
 
 During joint consensus, commit requires a majority of both the old and new
-voter sets. The quorum primitive is implemented and tested. Replicated
-configuration entries and the two committed transition phases are not yet
-integrated, so dynamic membership is not yet claimed.
+voter sets. Replicated joint and final entries execute both transition phases,
+survive restart, restore pending election quorums, and step down a leader
+removed by the final configuration.
 
 ## Proof boundary
 

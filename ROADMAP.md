@@ -1,4 +1,4 @@
-﻿# Roadmap
+# Roadmap
 
 ## Phase 1 - deterministic core: complete
 
@@ -25,14 +25,18 @@
 Performance optimization remains open: batching, group commit, queue-depth
 sweeps, backpressure, and physical NVMe measurements.
 
-## Phase 4 - complete Raft protocol: in progress
+## Phase 4 - complete Raft protocol: complete
 
-1. compacted-base absolute log indexing;
-2. durable `InstallSnapshot` and follower catch-up;
-3. safe log/WAL compaction;
-4. replicated joint and final configuration entries;
-5. ReadIndex or proven leases;
-6. leadership transfer.
+- compacted-base absolute log indexing;
+- durable `InstallSnapshot` and lagging-follower catch-up;
+- snapshot-before-fence log/WAL compaction and interrupted-install recovery;
+- replicated joint and final configuration entries with dual-majority commit;
+- quorum-confirmed ReadIndex;
+- leadership transfer and removal-triggered leader step-down;
+- deterministic compaction, membership, crash, and restart campaigns;
+- Sentinel race and io_uring acceptance gates.
+
+Evidence: `benchmarks/sentinel-phase4-2026-07-28.md`.
 
 ## Phase 5 - distributed product surface: planned
 
