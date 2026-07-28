@@ -13,17 +13,23 @@
 - durable term/vote and entry acknowledgements;
 - checksummed snapshot image format.
 
-## Phase 3 - Linux kernel paths: complete for functional baseline
+## Phase 3 - Linux kernel paths: complete
 
 - real `io_uring_setup` and mmap ring setup;
 - registered file and registered aligned buffer;
 - `O_DIRECT` `WRITE_FIXED`, CQE validation, and `FSYNC`;
 - WAL adapter over aligned io_uring blocks;
 - XDP/TC programs and namespace-safe netem controller;
-- live Sentinel integration and cleanup tests.
+- live Sentinel verifier, fault-injection, and cleanup tests;
+- dedicated GCP Local SSD NVMe qualification with recorded kernel, device,
+  SMART state, and latency distribution.
 
-Performance optimization remains open: batching, group commit, queue-depth
-sweeps, backpressure, and physical NVMe measurements.
+Evidence: benchmarks/sentinel-block-device-2026-07-28.md,
+benchmarks/sentinel-raw-block-2026-07-28.md, and
+benchmarks/gcp-local-nvme-2026-07-28.md.
+
+Batching, group commit, and queue-depth tuning remain performance improvements,
+not missing Phase 3 correctness gates.
 
 ## Phase 4 - complete Raft protocol: complete
 

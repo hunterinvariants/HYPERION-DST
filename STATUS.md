@@ -23,6 +23,7 @@ Updated: 2026-07-28
 | WAL + io_uring | write, close, reopen, validate, replay | `storage/uringwal` integration pass |
 | Kernel chaos | XDP and TC verifier/JIT | Sentinel verifier pass |
 | Kernel chaos | isolated delay/drop and cleanup | Sentinel live test |
+| Phase 3 | Linux io_uring, direct NVMe I/O, XDP/TC chaos, safe cleanup | complete; Sentinel and GCP Local SSD evidence |
 | Snapshot format | checksummed encode/decode and torn-image rejection | unit tests |
 | Membership | old/new joint-majority calculation | unit tests |
 | Tooling | seed sweeper, race suite, fuzz target, CI | executable commands/workflows |
