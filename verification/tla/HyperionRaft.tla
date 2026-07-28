@@ -1,7 +1,7 @@
 ---------------------------- MODULE HyperionRaft ----------------------------
 EXTENDS Naturals, FiniteSets, Sequences
 
-CONSTANTS Nodes, Nil
+CONSTANTS Nodes, Nil, MaxTerm
 
 VARIABLES term, votedFor, role, log, commitIndex, durableTerm, durableVote
 
@@ -19,6 +19,7 @@ Init ==
   /\ durableVote = votedFor
 
 BecomeCandidate(n) ==
+  /\ term[n] < MaxTerm
   /\ role' = [role EXCEPT ![n] = "Candidate"]
   /\ term' = [term EXCEPT ![n] = @ + 1]
   /\ votedFor' = [votedFor EXCEPT ![n] = n]
@@ -37,12 +38,12 @@ Next ==
   \/ \E n \in Nodes: Crash(n)
 
 ElectionSafety ==
-  \A t \in Nat:
+  \A t \in 0..MaxTerm:
     Cardinality({n \in Nodes: role[n] = "Leader" /\ term[n] = t}) <= 1
 
 TypeOK ==
-  /\ term \in [Nodes -> Nat]
-  /\ durableTerm \in [Nodes -> Nat]
+  /\ term \in [Nodes -> 0..MaxTerm]
+  /\ durableTerm \in [Nodes -> 0..MaxTerm]
   /\ commitIndex \in [Nodes -> Nat]
 
 Spec == Init /\ [][Next]_vars
