@@ -107,6 +107,7 @@ Compact(n, i) ==
 InstallSnapshot(leader, follower) ==
   /\ role[leader] = "Leader"
   /\ follower # leader
+  /\ term[follower] = term[leader]
   /\ snapshotIndex[leader] > snapshotIndex[follower]
   /\ snapshotIndex' = [snapshotIndex EXCEPT ![follower] = snapshotIndex[leader]]
   /\ commitIndex' = [commitIndex EXCEPT
