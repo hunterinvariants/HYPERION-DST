@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-RUN=/var/tmp/hyperion-phase5
+RUN=$(mktemp -d /var/tmp/hyperion-phase5.XXXXXX)
 BRIDGE=hyperion-br0
 PREFIX=10.77.0
 

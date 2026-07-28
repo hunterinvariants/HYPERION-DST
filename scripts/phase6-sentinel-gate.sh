@@ -14,7 +14,7 @@ fi
 
 cleanup() {
   set +e
-  pkill -f '/var/tmp/hyperion-phase5/hyperiond' 2>/dev/null
+  pkill -f '/var/tmp/hyperion-phase5\..*/hyperiond' 2>/dev/null
   for id in 1 2 3 4 5; do
     ip netns del "hyperion-n$id" 2>/dev/null
   done
