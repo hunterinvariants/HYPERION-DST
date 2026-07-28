@@ -89,7 +89,7 @@ for attempt in $(seq 1 100); do
 done
 test -n "$leader"
 
-kill "$(cat "$RUN/node$leader.pid")"
+kill "-${HYPERION_KILL_SIGNAL:-TERM}" "$(cat "$RUN/node$leader.pid")"
 wait "$(cat "$RUN/node$leader.pid")" 2>/dev/null || true
 
 backup_run=$(mktemp -d "$RUN/backup.XXXXXX")
