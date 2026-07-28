@@ -24,8 +24,10 @@ func NewRecoveredNode(
 		n.failStorage()
 		return n
 	}
-	n.applyCommittedConfigurations(1, n.Commit)
-	n.rebuildPendingConfig()
+	if !n.restoreConfigurationState() {
+		n.failStorage()
+		return n
+	}
 	return n
 }
 
@@ -59,7 +61,9 @@ func NewRecoveredNodeWithSnapshot(
 		n.failStorage()
 		return n
 	}
-	n.applyCommittedConfigurations(snapshot.LastIndex+1, n.Commit)
-	n.rebuildPendingConfig()
+	if !n.restoreConfigurationState() {
+		n.failStorage()
+		return n
+	}
 	return n
 }

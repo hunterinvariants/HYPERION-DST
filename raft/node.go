@@ -234,7 +234,8 @@ func (n *Node) Compact(index uint64, state []byte) bool {
 }
 
 func (n *Node) onInstallSnapshot(m Message) {
-	reject := m.Term < n.Term || m.SnapshotIndex < n.BaseIndex
+	reject := m.Term < n.Term || m.SnapshotIndex < n.BaseIndex || m.SnapshotOld == 0 ||
+		(m.SnapshotIndex == n.BaseIndex && m.SnapshotTerm != n.BaseTerm)
 	if !reject && m.SnapshotIndex > n.BaseIndex {
 		store, ok := n.store.(SnapshotStore)
 		if !ok {
@@ -344,9 +345,26 @@ func (n *Node) onVote(m Message) {
 		Term: n.Term, Reject: !grant})
 }
 
+func (n *Node) validNewEntry(entry Entry) bool {
+	switch entry.Kind {
+	case EntryNormal:
+		return entry.OldVoters == 0 && entry.NewVoters == 0
+	case EntryJointConfig:
+		return n.pendingConfig == 0 && n.votersNew == 0 &&
+			entry.OldVoters == n.votersOld && entry.OldVoters != 0 && entry.NewVoters != 0
+	case EntryFinalConfig:
+		return n.pendingConfig == 0 && n.votersNew != 0 &&
+			entry.OldVoters == n.votersNew && entry.NewVoters == 0
+	default:
+		return false
+	}
+}
 func (n *Node) onAppend(m Message) {
 	prevTerm, present := n.termAt(m.LogIndex)
 	reject := m.Term < n.Term || !present || prevTerm != m.LogTerm
+	if !reject && m.HasEntry && m.LogIndex+1 == n.lastIndex()+1 && !n.validNewEntry(m.Entry) {
+		reject = true
+	}
 	if !reject {
 		n.State, n.Leader, n.elapsed = Follower, m.From, 0
 		if m.HasEntry {
@@ -606,6 +624,44 @@ func (n *Node) Apply() []uint64 {
 	return out
 }
 
+func (n *Node) restoreConfigurationState() bool {
+	oldVoters, newVoters := n.votersOld, n.votersNew
+	pending := uint64(0)
+	first := n.BaseIndex + 1
+	for index := first; index <= n.lastIndex(); index++ {
+		entry := n.entryAt(index)
+		switch entry.Kind {
+		case EntryNormal:
+			if entry.OldVoters != 0 || entry.NewVoters != 0 {
+				return false
+			}
+		case EntryJointConfig:
+			if pending != 0 || newVoters != 0 || entry.OldVoters != oldVoters ||
+				entry.OldVoters == 0 || entry.NewVoters == 0 {
+				return false
+			}
+			if index <= n.Commit {
+				oldVoters, newVoters = entry.OldVoters, entry.NewVoters
+			} else {
+				pending = index
+			}
+		case EntryFinalConfig:
+			if pending != 0 || newVoters == 0 || entry.OldVoters != newVoters || entry.NewVoters != 0 {
+				return false
+			}
+			if index <= n.Commit {
+				oldVoters, newVoters = entry.OldVoters, 0
+			} else {
+				pending = index
+			}
+		default:
+			return false
+		}
+		n.ensurePeers(entry.OldVoters | entry.NewVoters)
+	}
+	n.votersOld, n.votersNew, n.pendingConfig = oldVoters, newVoters, pending
+	return true
+}
 func (n *Node) rebuildPendingConfig() {
 	n.pendingConfig = 0
 	first := max(n.Commit+1, n.BaseIndex+1)

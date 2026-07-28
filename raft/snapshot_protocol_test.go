@@ -98,7 +98,7 @@ func TestSnapshotFailureSendsNoAcknowledgement(t *testing.T) {
 	store := &snapshotRecordingStore{failSnapshot: true}
 	n := NewNodeWithStore(2, []uint32{1, 3}, 10, store)
 	n.Step(Message{Type: MsgInstallSnapshot, From: 1, To: 2, Term: 2,
-		SnapshotIndex: 10, SnapshotTerm: 2, Snapshot: []byte("state")})
+		SnapshotIndex: 10, SnapshotTerm: 2, Snapshot: []byte("state"), SnapshotOld: voterBits(1, 2, 3)})
 	if !n.Faulted || len(n.Drain(nil)) != 0 || n.BaseIndex != 0 {
 		t.Fatal("failed snapshot was acknowledged or exposed")
 	}
