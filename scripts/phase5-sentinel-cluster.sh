@@ -25,8 +25,10 @@ fi
 
 cleanup
 mkdir -p "$RUN"
+(cd "$ROOT" && go test ./... -race -count=1)
 go build -o "$RUN/hyperiond" "$ROOT/cmd/hyperiond"
 go build -o "$RUN/hyperionctl" "$ROOT/cmd/hyperionctl"
+go build -o "$RUN/hyperion-backup" "$ROOT/cmd/hyperion-backup"
 
 ip link add "$BRIDGE" type bridge
 ip addr add "$PREFIX.1/24" dev "$BRIDGE"
@@ -65,7 +67,9 @@ done
 
 for id in 1 2 3 4 5; do
   for attempt in $(seq 1 100); do
-    if curl -fsS "http://$PREFIX.$((10+id)):9300/healthz" >/dev/null; then
+    if curl -fsS "http://$PREFIX.$((10+id)):9300/healthz" >/dev/null &&
+      curl -fsS "http://$PREFIX.$((10+id)):9300/metrics" |
+        grep -q '^hyperion_commit_index '; then
       break
     fi
     sleep 0.05
@@ -87,6 +91,13 @@ test -n "$leader"
 
 kill "$(cat "$RUN/node$leader.pid")"
 wait "$(cat "$RUN/node$leader.pid")" 2>/dev/null || true
+
+backup_run=$(mktemp -d "$RUN/backup.XXXXXX")
+"$RUN/hyperion-backup" -mode create \
+  -data-dir "$RUN/node$leader" -backup-dir "$backup_run/image"
+"$RUN/hyperion-backup" -mode restore \
+  -backup-dir "$backup_run/image" -data-dir "$backup_run/restored"
+cmp "$RUN/node$leader/raft.wal" "$backup_run/restored/raft.wal"
 
 replacement=""
 for attempt in $(seq 1 150); do
@@ -116,8 +127,20 @@ if command -v lein >/dev/null; then
   ) &
   chaos_pid=$!
   export HYPERION_CLIENTS="$PREFIX.11:9200,$PREFIX.12:9200,$PREFIX.13:9200,$PREFIX.14:9200,$PREFIX.15:9200"
-  (cd "$ROOT/jepsen" && lein run test --no-ssh --time-limit 60)
+  set +e
+  (cd "$ROOT/jepsen" && lein run -- test --no-ssh --time-limit 60) 2>&1 |
+    tee "$RUN/jepsen.log"
+  jepsen_status=${PIPESTATUS[0]}
+  set -e
   wait "$chaos_pid"
+  if [[ $jepsen_status -ne 0 ]]; then
+    echo "Jepsen exited with status $jepsen_status" >&2
+    exit "$jepsen_status"
+  fi
+  if ! grep -Eq 'Analysis valid|:valid\? true' "$RUN/jepsen.log"; then
+    echo "Jepsen did not record a valid Knossos analysis" >&2
+    exit 1
+  fi
 else
   echo "lein is required for the Jepsen/Knossos gate" >&2
   exit 1

@@ -2,6 +2,7 @@
   (:gen-class)
   (:require [clojure.string :as str]
             [jepsen.checker :as checker]
+            [jepsen.checker.timeline :as timeline]
             [jepsen.cli :as cli]
             [jepsen.client :as client]
             [jepsen.generator :as gen]
@@ -112,7 +113,7 @@
           :client (HyperionClient. nil nil nil)
           :model (model/register)
           :checker (checker/compose {:linearizable (checker/linearizable)
-                                     :timeline (checker/timeline)})
+                                     :timeline (timeline/html)})
           :generator (->> (gen/mix [read-op write-op])
                           (gen/stagger 0.01)
                           (gen/time-limit (:time-limit opts 60)))}))
