@@ -77,7 +77,7 @@ Replicate(leader, follower) ==
   /\ durableTerm' = [durableTerm EXCEPT ![follower] = term[leader]]
   /\ role' = [role EXCEPT ![follower] = "Follower"]
   /\ commitIndex' = [commitIndex EXCEPT
-       ![follower] = Min2(commitIndex[leader], Len(log[leader]))]
+       ![follower] = Max2(@, Min2(commitIndex[leader], Len(log[leader])))]
   /\ UNCHANGED <<votedFor, durableVote, votes, snapshotIndex,
                  configOld, configNew>>
 
