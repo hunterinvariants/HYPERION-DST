@@ -5,9 +5,12 @@ import "context"
 
 // Entry is the stable representation of one replicated command.
 type Entry struct {
-	Index   uint64
-	Term    uint64
-	Command uint64
+	Index     uint64
+	Term      uint64
+	Command   uint64
+	Kind      uint8
+	OldVoters uint64
+	NewVoters uint64
 }
 
 // StableStore implementations must make Append durable before returning nil.

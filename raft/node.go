@@ -3,29 +3,35 @@ package raft
 const outboundCapacity = 4096
 
 type Node struct {
-	ID          uint32
-	Peers       []uint32
-	State       State
-	Term        uint64
-	VotedFor    uint32
-	Leader      uint32
-	Log         []Entry
-	Commit      uint64
-	Applied     uint64
-	timeout     uint64
-	elapsed     uint64
-	voteMask    uint64
-	preVoteMask uint64
-	preVoteTerm uint64
-	next        map[uint32]uint64
-	match       map[uint32]uint64
-	outbound    []Message
-	store       StableStore
-	Faulted     bool
-	readContext uint64
-	readAckMask uint64
-	readIndex   uint64
-	readReady   bool
+	ID            uint32
+	Peers         []uint32
+	State         State
+	Term          uint64
+	VotedFor      uint32
+	Leader        uint32
+	Log           []Entry
+	BaseIndex     uint64
+	BaseTerm      uint64
+	Commit        uint64
+	Applied       uint64
+	timeout       uint64
+	elapsed       uint64
+	voteMask      uint64
+	preVoteMask   uint64
+	preVoteTerm   uint64
+	next          map[uint32]uint64
+	match         map[uint32]uint64
+	outbound      []Message
+	store         StableStore
+	Faulted       bool
+	readContext   uint64
+	readAckMask   uint64
+	readIndex     uint64
+	readReady     bool
+	snapshot      Snapshot
+	votersOld     uint64
+	votersNew     uint64
+	pendingConfig uint64
 }
 
 func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
@@ -34,23 +40,60 @@ func NewNode(id uint32, peers []uint32, electionTimeout uint64) *Node {
 
 func NewNodeWithStore(id uint32, peers []uint32, electionTimeout uint64, store StableStore) *Node {
 	seen := nodeBit(id)
+	voters := seen
 	for _, peer := range peers {
 		bit := nodeBit(peer)
 		if seen&bit != 0 {
 			panic("raft: duplicate node ID")
 		}
 		seen |= bit
+		voters |= bit
 	}
 	return &Node{
 		ID: id, Peers: append([]uint32(nil), peers...), State: Follower,
 		Log: []Entry{{}}, timeout: electionTimeout,
-		next:     make(map[uint32]uint64, len(peers)),
-		match:    make(map[uint32]uint64, len(peers)),
-		outbound: make([]Message, 0, outboundCapacity),
-		store:    store,
+		votersOld: voters,
+		next:      make(map[uint32]uint64, len(peers)),
+		match:     make(map[uint32]uint64, len(peers)),
+		outbound:  make([]Message, 0, outboundCapacity),
+		store:     store,
 	}
 }
 
+func (n *Node) lastIndex() uint64 {
+	return n.BaseIndex + uint64(len(n.Log)) - 1
+}
+
+func (n *Node) offset(index uint64) (uint64, bool) {
+	if index < n.BaseIndex || index > n.lastIndex() {
+		return 0, false
+	}
+	return index - n.BaseIndex, true
+}
+
+func (n *Node) termAt(index uint64) (uint64, bool) {
+	offset, ok := n.offset(index)
+	if !ok {
+		return 0, false
+	}
+	return n.Log[offset].Term, true
+}
+
+func (n *Node) termAtMust(index uint64) uint64 {
+	term, ok := n.termAt(index)
+	if !ok {
+		panic("raft: log index out of range")
+	}
+	return term
+}
+
+func (n *Node) entryAt(index uint64) Entry {
+	offset, ok := n.offset(index)
+	if !ok {
+		panic("raft: log index out of range")
+	}
+	return n.Log[offset]
+}
 func (n *Node) Tick() {
 	if n.Faulted {
 		return
@@ -73,10 +116,10 @@ func (n *Node) startPreVote() {
 	n.preVoteTerm = n.Term + 1
 	n.Leader = 0
 	n.preVoteMask = nodeBit(n.ID)
-	last := uint64(len(n.Log) - 1)
+	last := n.lastIndex()
 	for _, p := range n.Peers {
 		n.send(Message{Type: MsgPreVote, From: n.ID, To: p, Term: n.preVoteTerm,
-			LogIndex: last, LogTerm: n.Log[last].Term})
+			LogIndex: last, LogTerm: n.termAtMust(last)})
 	}
 	if n.quorumMask(n.preVoteMask) {
 		n.startElection()
@@ -85,16 +128,16 @@ func (n *Node) startPreVote() {
 
 func (n *Node) startElection() {
 	nextTerm := n.Term + 1
-	if !n.persistHardState(HardState{Term: nextTerm, VotedFor: n.ID}) {
+	if !n.persistHardState(HardState{Term: nextTerm, VotedFor: n.ID, Commit: n.Commit}) {
 		return
 	}
 	n.State, n.Term, n.VotedFor, n.elapsed = Candidate, nextTerm, n.ID, 0
 	n.voteMask = nodeBit(n.ID)
 	n.preVoteMask = 0
-	last := uint64(len(n.Log) - 1)
+	last := n.lastIndex()
 	for _, p := range n.Peers {
 		n.send(Message{Type: MsgRequestVote, From: n.ID, To: p, Term: n.Term,
-			LogIndex: last, LogTerm: n.Log[last].Term})
+			LogIndex: last, LogTerm: n.termAtMust(last)})
 	}
 	if n.quorumMask(n.voteMask) {
 		n.becomeLeader()
@@ -107,7 +150,7 @@ func (n *Node) Step(m Message) {
 	}
 	isPreVote := m.Type == MsgPreVote || m.Type == MsgPreVoteResponse
 	if !isPreVote && m.Term > n.Term {
-		if !n.persistHardState(HardState{Term: m.Term}) {
+		if !n.persistHardState(HardState{Term: m.Term, Commit: n.Commit}) {
 			return
 		}
 		n.State, n.Term, n.VotedFor, n.Leader, n.readReady = Follower, m.Term, 0, 0, false
@@ -135,6 +178,10 @@ func (n *Node) Step(m Message) {
 		n.onAppend(m)
 	case MsgAppendResponse:
 		n.onAppendResponse(m)
+	case MsgInstallSnapshot:
+		n.onInstallSnapshot(m)
+	case MsgInstallSnapshotResponse:
+		n.onInstallSnapshotResponse(m)
 	case MsgTimeoutNow:
 		if n.State == Follower && m.Term == n.Term && m.From == n.Leader {
 			n.startElection()
@@ -147,8 +194,85 @@ func (n *Node) Step(m Message) {
 // leader's complete log.
 // StartReadIndex begins a quorum-confirmed linearizable read barrier. Only one
 // read barrier is active at a time; callers provide a non-zero unique context.
+// Compact publishes a durable state-machine snapshot before discarding its
+// covered log prefix. The entry at index remains as the compacted-base term.
+func (n *Node) Compact(index uint64, state []byte) bool {
+	if index <= n.BaseIndex || index > n.Applied {
+		return false
+	}
+	term, ok := n.termAt(index)
+	if !ok {
+		return false
+	}
+	store, ok := n.store.(SnapshotStore)
+	if !ok {
+		n.failStorage()
+		return false
+	}
+	snapshot := Snapshot{LastIndex: index, LastTerm: term, State: append([]byte(nil), state...), OldVoters: n.votersOld, NewVoters: n.votersNew}
+	if err := store.SaveSnapshot(snapshot); err != nil {
+		n.failStorage()
+		return false
+	}
+	if err := store.CompactLog(index); err != nil {
+		n.failStorage()
+		return false
+	}
+	offset, _ := n.offset(index)
+	n.Log = append([]Entry(nil), n.Log[offset:]...)
+	n.BaseIndex, n.BaseTerm, n.snapshot = index, term, snapshot
+	return true
+}
+
+func (n *Node) onInstallSnapshot(m Message) {
+	reject := m.Term < n.Term || m.SnapshotIndex < n.BaseIndex
+	if !reject && m.SnapshotIndex > n.BaseIndex {
+		store, ok := n.store.(SnapshotStore)
+		if !ok {
+			n.failStorage()
+			return
+		}
+		snapshot := Snapshot{LastIndex: m.SnapshotIndex, LastTerm: m.SnapshotTerm,
+			State: append([]byte(nil), m.Snapshot...), OldVoters: m.SnapshotOld, NewVoters: m.SnapshotNew}
+		if err := store.SaveSnapshot(snapshot); err != nil {
+			n.failStorage()
+			return
+		}
+		if err := store.CompactLog(snapshot.LastIndex); err != nil {
+			n.failStorage()
+			return
+		}
+		if term, present := n.termAt(snapshot.LastIndex); present && term == snapshot.LastTerm {
+			offset, _ := n.offset(snapshot.LastIndex)
+			n.Log = append([]Entry(nil), n.Log[offset:]...)
+		} else {
+			n.Log = []Entry{{Term: snapshot.LastTerm}}
+		}
+		n.BaseIndex, n.BaseTerm, n.snapshot = snapshot.LastIndex, snapshot.LastTerm, snapshot
+		n.votersOld, n.votersNew = snapshot.OldVoters, snapshot.NewVoters
+		n.Commit = max(n.Commit, snapshot.LastIndex)
+		n.Applied = max(n.Applied, snapshot.LastIndex)
+	}
+	if !reject {
+		n.State, n.Leader, n.elapsed = Follower, m.From, 0
+	}
+	n.send(Message{Type: MsgInstallSnapshotResponse, From: n.ID, To: m.From,
+		Term: n.Term, Reject: reject, Match: n.BaseIndex})
+}
+
+func (n *Node) onInstallSnapshotResponse(m Message) {
+	if n.State != Leader || m.Term != n.Term || m.Reject || !n.isVoter(m.From) {
+		return
+	}
+	if m.Match > n.match[m.From] {
+		n.match[m.From], n.next[m.From] = m.Match, m.Match+1
+	}
+	if n.next[m.From] <= n.lastIndex() {
+		n.appendTo(m.From)
+	}
+}
 func (n *Node) StartReadIndex(context uint64) bool {
-	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 || n.Log[n.Commit].Term != n.Term {
+	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 || n.termAtMust(n.Commit) != n.Term {
 		return false
 	}
 	n.readContext, n.readAckMask = context, nodeBit(n.ID)
@@ -173,7 +297,7 @@ func (n *Node) TransferLeadership(target uint32) bool {
 	if n.State != Leader || target == n.ID || !n.isVoter(target) {
 		return false
 	}
-	last := uint64(len(n.Log) - 1)
+	last := n.lastIndex()
 	if n.match[target] < last {
 		n.appendTo(target)
 		return false
@@ -182,21 +306,21 @@ func (n *Node) TransferLeadership(target uint32) bool {
 	return true
 }
 func (n *Node) onPreVote(m Message) {
-	last := uint64(len(n.Log) - 1)
-	upToDate := m.LogTerm > n.Log[last].Term ||
-		(m.LogTerm == n.Log[last].Term && m.LogIndex >= last)
+	last := n.lastIndex()
+	upToDate := m.LogTerm > n.termAtMust(last) ||
+		(m.LogTerm == n.termAtMust(last) && m.LogIndex >= last)
 	leaderActive := n.Leader != 0 && n.elapsed < n.timeout
 	grant := n.isVoter(m.From) && m.Term >= n.Term+1 && upToDate && !leaderActive
 	n.send(Message{Type: MsgPreVoteResponse, From: n.ID, To: m.From,
 		Term: m.Term, Reject: !grant})
 }
 func (n *Node) onVote(m Message) {
-	last := uint64(len(n.Log) - 1)
-	upToDate := m.LogTerm > n.Log[last].Term ||
-		(m.LogTerm == n.Log[last].Term && m.LogIndex >= last)
+	last := n.lastIndex()
+	upToDate := m.LogTerm > n.termAtMust(last) ||
+		(m.LogTerm == n.termAtMust(last) && m.LogIndex >= last)
 	grant := n.isVoter(m.From) && m.Term == n.Term && (n.VotedFor == 0 || n.VotedFor == m.From) && upToDate
 	if grant {
-		if !n.persistHardState(HardState{Term: n.Term, VotedFor: m.From}) {
+		if !n.persistHardState(HardState{Term: n.Term, VotedFor: m.From, Commit: n.Commit}) {
 			return
 		}
 		n.VotedFor, n.elapsed = m.From, 0
@@ -206,16 +330,16 @@ func (n *Node) onVote(m Message) {
 }
 
 func (n *Node) onAppend(m Message) {
-	reject := m.Term < n.Term || m.LogIndex >= uint64(len(n.Log)) ||
-		n.Log[m.LogIndex].Term != m.LogTerm
+	prevTerm, present := n.termAt(m.LogIndex)
+	reject := m.Term < n.Term || !present || prevTerm != m.LogTerm
 	if !reject {
 		n.State, n.Leader, n.elapsed = Follower, m.From, 0
 		if m.HasEntry {
 			at := m.LogIndex + 1
-			if at < uint64(len(n.Log)) && n.Log[at].Term != m.Entry.Term {
-				n.Log = n.Log[:at]
+			if offset, ok := n.offset(at); ok && n.Log[offset].Term != m.Entry.Term {
+				n.Log = n.Log[:offset]
 			}
-			if at == uint64(len(n.Log)) {
+			if at == n.lastIndex()+1 {
 				if err := n.store.Append(at, m.Entry); err != nil {
 					n.failStorage()
 					return
@@ -224,11 +348,17 @@ func (n *Node) onAppend(m Message) {
 			}
 		}
 		if m.Commit > n.Commit {
-			n.Commit = min(m.Commit, uint64(len(n.Log)-1))
+			previous := n.Commit
+			commit := min(m.Commit, n.lastIndex())
+			if !n.persistHardState(HardState{Term: n.Term, VotedFor: n.VotedFor, Commit: commit}) {
+				return
+			}
+			n.Commit = commit
+			n.applyCommittedConfigurations(previous+1, n.Commit)
 		}
 	}
 	n.send(Message{Type: MsgAppendResponse, From: n.ID, To: m.From,
-		Term: n.Term, Reject: reject, Match: uint64(len(n.Log) - 1), Context: m.Context})
+		Term: n.Term, Reject: reject, Match: n.lastIndex(), Context: m.Context})
 }
 
 func (n *Node) onAppendResponse(m Message) {
@@ -238,7 +368,7 @@ func (n *Node) onAppendResponse(m Message) {
 			n.readIndex, n.readReady = n.Commit, true
 		}
 	}
-	if n.State != Leader || m.Term != n.Term || m.Match >= uint64(len(n.Log)) {
+	if n.State != Leader || m.Term != n.Term || m.Match >= n.lastIndex()+1 {
 		return
 	}
 	if m.Reject {
@@ -249,44 +379,140 @@ func (n *Node) onAppendResponse(m Message) {
 		return
 	}
 	n.match[m.From], n.next[m.From] = m.Match, m.Match+1
-	for idx := uint64(len(n.Log) - 1); idx > n.Commit; idx-- {
-		if n.Log[idx].Term != n.Term {
+	for idx := n.lastIndex(); idx > n.Commit; idx-- {
+		if n.termAtMust(idx) != n.Term {
 			continue
 		}
-		count := 1
+		acked := nodeBit(n.ID)
 		for _, p := range n.Peers {
 			if n.match[p] >= idx {
-				count++
+				acked |= nodeBit(p)
 			}
 		}
-		if n.quorum(count) {
+		if n.canCommitIndex(idx, acked) {
+			if !n.persistHardState(HardState{Term: n.Term, VotedFor: n.VotedFor, Commit: idx}) {
+				return
+			}
+			previous := n.Commit
 			n.Commit = idx
+			n.applyCommittedConfigurations(previous+1, n.Commit)
 			n.broadcastAppend()
 			break
 		}
 	}
-	if n.next[m.From] < uint64(len(n.Log)) {
+	if n.next[m.From] < n.lastIndex()+1 {
 		n.appendTo(m.From)
 	}
 }
 
+func voterMask(ids []uint32) (uint64, bool) {
+	if len(ids) == 0 {
+		return 0, false
+	}
+	var mask uint64
+	for _, id := range ids {
+		bit := nodeBit(id)
+		if mask&bit != 0 {
+			return 0, false
+		}
+		mask |= bit
+	}
+	return mask, true
+}
+
+// ProposeJoint appends C_old,new. Only one membership transition may be in
+// flight, and the local node must remain a voter through the joint phase.
+func (n *Node) ProposeJoint(newVoters []uint32) bool {
+	newMask, ok := voterMask(newVoters)
+	if !ok || newMask&nodeBit(n.ID) == 0 || n.State != Leader ||
+		n.Faulted || n.votersNew != 0 || n.pendingConfig != 0 {
+		return false
+	}
+	n.ensurePeers(newMask)
+	entry := Entry{Term: n.Term, Kind: EntryJointConfig,
+		OldVoters: n.votersOld, NewVoters: newMask}
+	if !n.appendLocal(entry) {
+		return false
+	}
+	n.pendingConfig = n.lastIndex()
+	n.broadcastAppend()
+	return true
+}
+
+// ProposeFinal appends C_new after the joint entry has committed. The final
+// entry itself is committed under both old and new majorities.
+func (n *Node) ProposeFinal() bool {
+	if n.State != Leader || n.Faulted || n.votersNew == 0 || n.pendingConfig != 0 {
+		return false
+	}
+	entry := Entry{Term: n.Term, Kind: EntryFinalConfig, OldVoters: n.votersNew}
+	if !n.appendLocal(entry) {
+		return false
+	}
+	n.pendingConfig = n.lastIndex()
+	n.broadcastAppend()
+	return true
+}
+
+func (n *Node) appendLocal(entry Entry) bool {
+	if err := n.store.Append(n.lastIndex()+1, entry); err != nil {
+		n.failStorage()
+		return false
+	}
+	n.Log = append(n.Log, entry)
+	return true
+}
+
+func (n *Node) ensurePeers(mask uint64) {
+	for id := uint32(1); id <= 64; id++ {
+		if id == n.ID || mask&nodeBit(id) == 0 {
+			continue
+		}
+		found := false
+		for _, peer := range n.Peers {
+			found = found || peer == id
+		}
+		if !found {
+			n.Peers = append(n.Peers, id)
+			n.next[id] = n.lastIndex() + 1
+			n.match[id] = 0
+		}
+	}
+}
+
+func (n *Node) applyCommittedConfigurations(first, last uint64) {
+	if first <= n.BaseIndex {
+		first = n.BaseIndex + 1
+	}
+	for index := first; index <= last; index++ {
+		entry := n.entryAt(index)
+		switch entry.Kind {
+		case EntryJointConfig:
+			n.votersOld, n.votersNew = entry.OldVoters, entry.NewVoters
+			n.ensurePeers(entry.OldVoters | entry.NewVoters)
+		case EntryFinalConfig:
+			n.votersOld, n.votersNew = entry.OldVoters, 0
+		}
+		if index == n.pendingConfig {
+			n.pendingConfig = 0
+		}
+	}
+}
 func (n *Node) Propose(command uint64) bool {
 	if n.State != Leader || n.Faulted {
 		return false
 	}
 	entry := Entry{Term: n.Term, Command: command}
-	if err := n.store.Append(uint64(len(n.Log)), entry); err != nil {
-		n.failStorage()
+	if !n.appendLocal(entry) {
 		return false
 	}
-	n.Log = append(n.Log, entry)
 	n.broadcastAppend()
 	return true
 }
 
 func (n *Node) becomeLeader() {
 	n.State, n.Leader, n.elapsed = Leader, n.ID, 0
-	last := uint64(len(n.Log))
+	last := n.lastIndex() + 1
 	for _, p := range n.Peers {
 		n.next[p], n.match[p] = last, 0
 	}
@@ -304,9 +530,14 @@ func (n *Node) appendTo(p uint32) {
 }
 
 func (n *Node) appendToContext(p uint32, context uint64) {
+	if n.next[p] <= n.BaseIndex {
+		n.send(Message{Type: MsgInstallSnapshot, From: n.ID, To: p, Term: n.Term,
+			SnapshotIndex: n.snapshot.LastIndex, SnapshotTerm: n.snapshot.LastTerm, Snapshot: n.snapshot.State, SnapshotOld: n.snapshot.OldVoters, SnapshotNew: n.snapshot.NewVoters})
+		return
+	}
 	next := n.next[p]
-	if next > uint64(len(n.Log)) {
-		next = uint64(len(n.Log))
+	if next > n.lastIndex()+1 {
+		next = n.lastIndex() + 1
 		n.next[p] = next
 	}
 	if next == 0 {
@@ -314,9 +545,9 @@ func (n *Node) appendToContext(p uint32, context uint64) {
 	}
 	prev := next - 1
 	m := Message{Type: MsgAppend, From: n.ID, To: p, Term: n.Term,
-		LogIndex: prev, LogTerm: n.Log[prev].Term, Commit: n.Commit, Context: context}
-	if next < uint64(len(n.Log)) {
-		m.Entry, m.HasEntry = n.Log[next], true
+		LogIndex: prev, LogTerm: n.termAtMust(prev), Commit: n.Commit, Context: context}
+	if next < n.lastIndex()+1 {
+		m.Entry, m.HasEntry = n.entryAt(next), true
 	}
 	n.send(m)
 }
@@ -338,33 +569,45 @@ func (n *Node) Apply() []uint64 {
 	out := make([]uint64, 0, n.Commit-n.Applied)
 	for n.Applied < n.Commit {
 		n.Applied++
-		out = append(out, n.Log[n.Applied].Command)
+		out = append(out, n.entryAt(n.Applied).Command)
 	}
 	return out
 }
 
-func (n *Node) quorum(v int) bool { return v >= (len(n.Peers)+1)/2+1 }
+func (n *Node) canCommitIndex(index uint64, acked uint64) bool {
+	oldVoters, newVoters := n.votersOld, n.votersNew
+	for pending := n.Commit + 1; pending <= index; pending++ {
+		entry := n.entryAt(pending)
+		if entry.Kind == EntryJointConfig {
+			oldVoters, newVoters = entry.OldVoters, entry.NewVoters
+		}
+		// A final entry is committed by the current joint configuration;
+		// C_new becomes active only after that entry is committed.
+	}
+	return majorityMask(oldVoters, acked) &&
+		(newVoters == 0 || majorityMask(newVoters, acked))
+}
+func majorityMask(voters, acked uint64) bool {
+	return voters != 0 && bitsSet(voters&acked) >= bitsSet(voters)/2+1
+}
+
+func bitsSet(mask uint64) int {
+	count := 0
+	for mask != 0 {
+		mask &= mask - 1
+		count++
+	}
+	return count
+}
 
 func (n *Node) quorumMask(mask uint64) bool {
-	count := 0
-	for id := range uint32(64) {
-		if mask&(uint64(1)<<id) != 0 {
-			count++
-		}
-	}
-	return n.quorum(count)
+	return majorityMask(n.votersOld, mask) &&
+		(n.votersNew == 0 || majorityMask(n.votersNew, mask))
 }
 
 func (n *Node) isVoter(id uint32) bool {
-	if id == n.ID {
-		return true
-	}
-	for _, peer := range n.Peers {
-		if peer == id {
-			return true
-		}
-	}
-	return false
+	bit := nodeBit(id)
+	return (n.votersOld|n.votersNew)&bit != 0
 }
 
 func nodeBit(id uint32) uint64 {
