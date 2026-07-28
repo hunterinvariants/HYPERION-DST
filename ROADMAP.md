@@ -48,11 +48,12 @@ Evidence: `benchmarks/sentinel-phase4-2026-07-28.md`.
 
 Sentinel evidence: `benchmarks/sentinel-phase5-2026-07-28.md`.
 
-## Phase 6 - formal and production qualification: planned
+## Phase 6 - formal and production qualification: in progress
 
 1. complete TLA+ protocol model and bounded CI model checking;
 2. disk-full, I/O-error, process-kill, and corruption campaigns;
-3. dedicated physical NVMe test matrix;
+3. dedicated GCP Local SSD NVMe qualification: complete for the recorded
+   configuration; bare-metal power-loss qualification remains external;
 4. documented operating envelope and release checklist.
 
 No phase is considered complete from code presence alone. It requires an

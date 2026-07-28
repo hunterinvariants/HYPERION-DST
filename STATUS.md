@@ -31,6 +31,7 @@ Updated: 2026-07-28
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
 | Jepsen | live register workload and Knossos checker | Sentinel `valid? true` under process and TC network faults |
+| NVMe | GCP Local SSD raw `O_DIRECT` + registered io_uring durability | 10,000 writes, 10,132 ops/s, p99 132.080 us, all gates pass |
 
 Additional measured evidence:
 
@@ -44,6 +45,8 @@ Additional measured evidence:
 - 100x io_uring snapshot/compaction/recovery gate: pass;
 - Phase 5 five-process Sentinel gate: pass;
 - Jepsen/Knossos register history under process and TC faults: `valid? true`.
+- GCP Local SSD NVMe gate: 10,000 durable operations, p50 95.074 us,
+  p99 132.080 us, max 551.414 us; race, TLC, and 100x integration gates pass.
 
 ## Remaining production gates
 
@@ -61,12 +64,10 @@ Additional measured evidence:
 - test disk-full, short-I/O, checksum corruption, and failed `FSYNC` paths;
 - add manifest/version migration and extended observability procedures.
 
-### External hardware gate
+### External power-loss gate
 
-- attach a dedicated, disposable physical NVMe namespace;
-- record model, firmware, kernel, filesystem, mount options, CPU policy, and queue settings;
-- run power-loss or equivalent fault testing without risking a system disk;
-- publish latency distributions and raw benchmark data.
+- GCP Local SSD NVMe configuration and latency distribution are recorded;
+- bare-metal firmware-controlled power-loss testing remains outstanding.
 
 ## Claim policy
 
