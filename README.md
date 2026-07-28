@@ -39,7 +39,9 @@ On the `sentinel` Linux host, the following gates passed:
 - XDP and TC verifier/JIT loading;
 - isolated 25 ms TC delay and configured 10% XDP drop injection;
 - namespace, veth, map, and program cleanup;
-- complete `go test ./... -race -count=1` suite.
+- complete `go test ./... -race -count=1` suite;
+- five-process Phase 5 failover, health, metrics, backup/restore gate;
+- 60-second live Jepsen/Knossos workload under process and TC network faults: `valid? true`.
 
 Measured durable block writes on ext4 over `/dev/sda2`:
 

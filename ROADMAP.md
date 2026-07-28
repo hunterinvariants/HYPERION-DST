@@ -38,7 +38,7 @@ sweeps, backpressure, and physical NVMe measurements.
 
 Evidence: `benchmarks/sentinel-phase4-2026-07-28.md`.
 
-## Phase 5 - distributed product surface: implementation complete, Sentinel gate pending
+## Phase 5 - distributed product surface: complete
 
 1. CRC32C-framed, versioned peer and client protocols;
 2. TCP multi-process cluster service and isolated five-node namespace runner;
@@ -46,7 +46,7 @@ Evidence: `benchmarks/sentinel-phase4-2026-07-28.md`.
 4. Prometheus metrics, health endpoint, graceful shutdown, checksummed offline backup and restore;
 5. Jepsen register workload with Knossos linearizability checking and live process/network faults.
 
-Local Go gates pass. Phase 5 becomes complete only after `scripts/phase5-sentinel-cluster.sh` passes on Sentinel and its evidence is checked in.
+Sentinel evidence: `benchmarks/sentinel-phase5-2026-07-28.md`.
 
 ## Phase 6 - formal and production qualification: planned
 

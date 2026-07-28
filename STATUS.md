@@ -30,7 +30,7 @@ Updated: 2026-07-28
 | Service | versioned peer/client protocol and multi-process TCP cluster | protocol and three-process restart tests |
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
-| Jepsen | live register workload and Knossos checker | implementation complete; Sentinel gate pending |
+| Jepsen | live register workload and Knossos checker | Sentinel `valid? true` under process and TC network faults |
 
 Additional measured evidence:
 
@@ -41,22 +41,17 @@ Additional measured evidence:
 - latency: p50 533.815 us, p99 705.035 us, max 1.382461 ms;
 - Phase 4 Sentinel race gate: pass;
 - 100x deterministic five-node Raft/DST gate: pass in 481.973 seconds;
-- 100x io_uring snapshot/compaction/recovery gate: pass.
+- 100x io_uring snapshot/compaction/recovery gate: pass;
+- Phase 5 five-process Sentinel gate: pass;
+- Jepsen/Knossos register history under process and TC faults: `valid? true`.
 
 ## Remaining production gates
 
-### P0: Phase 5 external acceptance
-
-- run the isolated five-node Sentinel namespace gate;
-- record the process-kill and TC partition history;
-- check in the successful Jepsen/Knossos linearizability report.
-
 ### P0: independent verification
 
-- build a live Jepsen workload and Knossos linearizability checker;
 - expand TLA+ to AppendEntries, commit, snapshot installation, and membership;
 - run the model checker in CI with a documented state bound;
-- add process-kill, filesystem-full, I/O-error, and restart integration tests.
+- add filesystem-full, injected I/O-error, and extended restart integration campaigns.
 
 ### P1: storage performance and operability
 
@@ -64,7 +59,7 @@ Additional measured evidence:
 - add buffer/file lifecycle state machines and queue saturation backpressure;
 - benchmark group commit and durability-policy tradeoffs;
 - test disk-full, short-I/O, checksum corruption, and failed `FSYNC` paths;
-- add manifest/version migration, observability, backup, and restore procedures.
+- add manifest/version migration and extended observability procedures.
 
 ### External hardware gate
 
@@ -76,7 +71,7 @@ Additional measured evidence:
 ## Claim policy
 
 HYPERION-DST has a completed, Linux-qualified Raft protocol core. It remains
-an engineering prototype rather than a production database until the Phase 5
-service surface and Phase 6 qualification gates are complete. Full
+an engineering prototype rather than a production database until the Phase 6
+production qualification gates are complete. Full
 zero-allocation, sub-microsecond physical durability, strict serializability, and machine-checked safety must not
 be claimed until their corresponding gates above have passed.
