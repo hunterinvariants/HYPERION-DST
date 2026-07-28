@@ -34,19 +34,49 @@ are not generalized hardware claims.
 
 ## Linearizability result
 
-The live five-node workload used Jepsen with the Knossos register checker.
-During the measured history, the harness killed the leader process and applied
-complete network loss to an isolated node. The final checker result was:
+The live five-node workload used Jepsen with the Knossos register checker. The
+raw history is checked in, so the numbers below can be recounted rather than
+taken on trust:
+
+`jepsen/store/hyperion-live-linearizability/20260728T045906.512+0200/`
+(`results.edn`, `history.txt`, `jepsen.log`).
 
 ```clojure
-{:linearizable {:valid? true}
- :timeline {:valid? true}
+{:linearizable {:valid? true,
+                :model #knossos.model.Register{:value 263637},
+                :final-paths (),
+                :configs ()},
+ :timeline {:valid? true},
  :valid? true}
 ```
 
-Recorded result:
-`jepsen/store/hyperion-live-linearizability/20260728T045906.512+0200/results.edn`
-(see `jepsen/store/README.md` for what is checked in and what is not).
+Exactly what that history contains, because the composition matters more than
+the verdict:
+
+| Property | Value |
+|---|---:|
+| Command | `lein run test --no-ssh --time-limit 15` |
+| Wall-clock window | 15 s, concurrency 5 |
+| Invoked operations | 150 |
+| Completed `:ok` | 25 |
+| Rejected `:fail` (`:not-leader`) | 75 |
+| Indeterminate `:info` | 50 |
+
+Two qualifications a reader needs. First, faults are applied **outside** Jepsen:
+`scripts/phase5-sentinel-cluster.sh` runs a background subshell that puts
+`netem loss 100%` on one node's host veth for about four seconds inside the
+fifteen-second window and then removes it. The test itself uses `gen/clients`
+with the noop nemesis from `tests/noop-test`, so no nemesis operations appear in
+the history and the fault window cannot be read off it -- the `Connection
+refused` `:info` entries are the only trace. Second, a leader process kill
+happens earlier in that script, before the measured window, not during it.
+
+So the supported claim is: **under a four-second total network isolation of one
+node, a 15-second five-client register history containing 25 completed
+operations was linearizable.** That is a real result on a real cluster and it is
+now re-checkable. It is not a long-running, nemesis-driven Jepsen campaign, and
+25 completed operations is a small history for a linearizability argument.
+Widening it is tracked in `ROADMAP.md` rather than claimed here.
 
 A reduced version of the same workload now also runs in CI on every push
 (`.github/workflows/jepsen.yml`): same client protocol, same Knossos register

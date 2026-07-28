@@ -66,3 +66,22 @@ Evidence: `benchmarks/sentinel-phase6-2026-07-28.md` and
 
 No phase is considered complete from code presence alone. It requires an
 executable test or recorded external evidence.
+
+## Known evidence bounds, not yet closed
+
+These are limits of the recorded evidence rather than missing implementation.
+They are listed here so they are not mistaken for claims.
+
+- **Linearizability history is short.** The recorded Sentinel run is 15 seconds
+  and 150 operations, of which 25 completed. Faults are applied by the cluster
+  script rather than a Jepsen nemesis, so the fault windows are not recorded in
+  the history. A longer nemesis-driven campaign, with the faults in the history,
+  would make the result considerably stronger.
+- **The formal model is not tied to the implementation.** There is no refinement
+  mapping and no trace validation between the TLA+ model and the Go code; the
+  model is an independent abstraction that is checked on its own terms.
+- **Model bounds are small and safety-only.** Three nodes, two terms, two log
+  entries, no fairness conditions, so no liveness property is checked.
+- **Live XDP/TC injection, the networked five-process gate and the NVMe
+  measurements are host-specific** and are not reproduced by CI. See the
+  coverage table in `STATUS.md`.

@@ -1,0 +1,300 @@
+0	:invoke	:read	nil
+0	:info	:read	nil	Connection refused
+1	:invoke	:write	242503
+1	:fail	:write	242503	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:write	76233
+3	:fail	:write	76233	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	nil
+5	:invoke	:write	924190
+5	:info	:write	924190	Connection refused
+10	:invoke	:read	nil
+10	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	676405
+2	:fail	:write	676405	:not-leader
+3	:invoke	:write	632590
+3	:fail	:write	632590	:not-leader
+4	:invoke	:write	448981
+4	:ok	:write	448981
+15	:invoke	:write	141173
+15	:info	:write	141173	Connection refused
+20	:invoke	:read	nil
+20	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	200920
+2	:fail	:write	200920	:not-leader
+3	:invoke	:write	778426
+3	:fail	:write	778426	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	448981
+25	:invoke	:read	nil
+25	:info	:read	nil	Connection refused
+30	:invoke	:read	nil
+30	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	448981
+35	:invoke	:read	nil
+35	:info	:read	nil	Connection refused
+40	:invoke	:write	475313
+40	:info	:write	475313	Connection refused
+1	:invoke	:write	410602
+1	:fail	:write	410602	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:write	483785
+3	:fail	:write	483785	:not-leader
+4	:invoke	:write	58941
+4	:ok	:write	58941
+45	:invoke	:write	944967
+45	:info	:write	944967	Connection refused
+50	:invoke	:read	nil
+50	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	58941
+55	:invoke	:read	nil
+55	:info	:read	nil	Connection refused
+60	:invoke	:read	nil
+60	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	886520
+4	:ok	:write	886520
+65	:invoke	:read	nil
+65	:info	:read	nil	Connection refused
+70	:invoke	:read	nil
+70	:info	:read	nil	Connection refused
+1	:invoke	:write	41110
+1	:fail	:write	41110	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	886520
+75	:invoke	:read	nil
+75	:info	:read	nil	Connection refused
+80	:invoke	:read	nil
+80	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	106712
+2	:fail	:write	106712	:not-leader
+3	:invoke	:write	173250
+3	:fail	:write	173250	:not-leader
+4	:invoke	:write	375479
+4	:ok	:write	375479
+85	:invoke	:read	nil
+85	:info	:read	nil	Connection refused
+90	:invoke	:read	nil
+90	:info	:read	nil	Connection refused
+1	:invoke	:write	100797
+1	:fail	:write	100797	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:write	598099
+3	:fail	:write	598099	:not-leader
+4	:invoke	:write	214184
+4	:ok	:write	214184
+95	:invoke	:read	nil
+95	:info	:read	nil	Connection refused
+100	:invoke	:write	458178
+100	:info	:write	458178	Connection refused
+1	:invoke	:write	776872
+1	:fail	:write	776872	:not-leader
+2	:invoke	:write	607510
+2	:fail	:write	607510	:not-leader
+3	:invoke	:write	393749
+3	:fail	:write	393749	:not-leader
+4	:invoke	:write	315068
+4	:ok	:write	315068
+105	:invoke	:read	nil
+105	:info	:read	nil	Connection refused
+110	:invoke	:write	136904
+110	:info	:write	136904	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	31968
+2	:fail	:write	31968	:not-leader
+3	:invoke	:write	502126
+3	:fail	:write	502126	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	315068
+115	:invoke	:read	nil
+115	:info	:read	nil	Connection refused
+120	:invoke	:write	272483
+120	:info	:write	272483	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:write	556521
+3	:fail	:write	556521	:not-leader
+4	:invoke	:write	790099
+125	:invoke	:write	430841
+125	:info	:write	430841	Connection refused
+4	:ok	:write	790099
+130	:invoke	:write	897382
+130	:info	:write	897382	Connection refused
+1	:invoke	:write	93098
+1	:fail	:write	93098	:not-leader
+2	:invoke	:write	754987
+2	:fail	:write	754987	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	785917
+4	:ok	:write	785917
+135	:invoke	:read	nil
+135	:info	:read	nil	Connection refused
+140	:invoke	:write	124462
+140	:info	:write	124462	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	286058
+2	:fail	:write	286058	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	483675
+4	:ok	:write	483675
+145	:invoke	:read	nil
+145	:info	:read	nil	Connection refused
+150	:invoke	:write	242994
+150	:info	:write	242994	Connection refused
+1	:invoke	:write	161521
+2	:invoke	:write	121040
+1	:fail	:write	161521	:not-leader
+2	:fail	:write	121040	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	953315
+4	:ok	:write	953315
+155	:invoke	:write	594365
+155	:info	:write	594365	Connection refused
+160	:invoke	:read	nil
+160	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:read	nil
+3	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	402553
+4	:ok	:write	402553
+165	:invoke	:write	271512
+165	:info	:write	271512	Connection refused
+170	:invoke	:read	nil
+170	:info	:read	nil	Connection refused
+1	:invoke	:write	205422
+1	:fail	:write	205422	:not-leader
+2	:invoke	:write	362811
+2	:fail	:write	362811	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	402553
+175	:invoke	:write	906538
+175	:info	:write	906538	Connection refused
+180	:invoke	:write	806170
+180	:info	:write	806170	Connection refused
+1	:invoke	:write	477181
+1	:fail	:write	477181	:not-leader
+2	:invoke	:write	863912
+2	:fail	:write	863912	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	170491
+4	:ok	:write	170491
+185	:invoke	:write	525256
+185	:info	:write	525256	Connection refused
+190	:invoke	:write	530736
+190	:info	:write	530736	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	12892
+2	:fail	:write	12892	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	776381
+4	:ok	:write	776381
+195	:invoke	:read	nil
+195	:info	:read	nil	Connection refused
+200	:invoke	:write	252476
+200	:info	:write	252476	Connection refused
+1	:invoke	:write	122680
+2	:invoke	:write	385308
+1	:fail	:write	122680	:not-leader
+2	:fail	:write	385308	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	776381
+205	:invoke	:write	345031
+205	:info	:write	345031	Connection refused
+210	:invoke	:read	nil
+210	:info	:read	nil	Connection refused
+1	:invoke	:write	368361
+1	:fail	:write	368361	:not-leader
+2	:invoke	:write	90043
+2	:fail	:write	90043	:not-leader
+3	:invoke	:write	243947
+3	:fail	:write	243947	:not-leader
+4	:invoke	:write	589671
+4	:ok	:write	589671
+215	:invoke	:write	767619
+215	:info	:write	767619	Connection refused
+220	:invoke	:read	nil
+220	:info	:read	nil	Connection refused
+1	:invoke	:read	nil
+1	:fail	:read	nil	:not-leader
+2	:invoke	:write	447174
+2	:fail	:write	447174	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:write	679318
+225	:invoke	:write	111247
+225	:info	:write	111247	Connection refused
+4	:ok	:write	679318
+230	:invoke	:read	nil
+230	:info	:read	nil	Connection refused
+1	:invoke	:write	87922
+1	:fail	:write	87922	:not-leader
+2	:invoke	:write	868355
+2	:fail	:write	868355	:not-leader
+3	:invoke	:write	163697
+3	:fail	:write	163697	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	679318
+235	:invoke	:write	914478
+235	:info	:write	914478	Connection refused
+240	:invoke	:write	536278
+240	:info	:write	536278	Connection refused
+1	:invoke	:write	768432
+1	:fail	:write	768432	:not-leader
+2	:invoke	:read	nil
+2	:fail	:read	nil	:not-leader
+3	:invoke	:read	nil
+3	:fail	:read	nil	:not-leader
+4	:invoke	:read	nil
+4	:ok	:read	679318
+245	:invoke	:write	263637
+245	:info	:write	263637	Connection refused

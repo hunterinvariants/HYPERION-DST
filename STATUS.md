@@ -31,7 +31,7 @@ Updated: 2026-07-28
 | Service | versioned peer/client protocol and multi-process TCP cluster | protocol and three-process restart tests |
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
-| Jepsen | live register workload and Knossos checker | Sentinel `valid? true` under process and TC network faults |
+| Jepsen | live register workload and Knossos checker | Sentinel `valid? true`; 15 s / 150 ops / 25 completed, under a four-second TC isolation of one node; raw history in `jepsen/store/` |
 | NVMe | GCP Local SSD raw `O_DIRECT` + registered io_uring durability | 10,000 writes, 10,132 ops/s, p99 132.080 us, all gates pass |
 
 Additional measured evidence:
@@ -45,7 +45,9 @@ Additional measured evidence:
 - 100x deterministic five-node Raft/DST gate: pass in 481.973 seconds;
 - 100x io_uring snapshot/compaction/recovery gate: pass;
 - Phase 5 five-process Sentinel gate: pass;
-- Jepsen/Knossos register history under process and TC faults: `valid? true`.
+- Jepsen/Knossos register history under a four-second TC isolation: `valid? true`
+  over 150 invoked operations of which 25 completed; faults are applied by the
+  cluster script, not by a Jepsen nemesis, so they do not appear in the history.
 - GCP Local SSD NVMe gate: 10,000 durable operations, p50 95.074 us,
   p99 132.080 us, max 551.414 us; race, TLC, and 100x integration gates pass.
 - Phase 6 Sentinel gate: ENOSPC/EIO/corruption/restart/SIGKILL pass;
