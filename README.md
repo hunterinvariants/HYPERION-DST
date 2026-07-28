@@ -1,4 +1,4 @@
-﻿# HYPERION-DST
+# HYPERION-DST
 
 [![CI](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml)
 [![Kernel build](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml)
@@ -16,7 +16,7 @@ criteria are tracked in [STATUS.md](STATUS.md).
 - deterministic virtual time, seeded scheduling, message delay/drop, and restart;
 - Raft pre-vote, elections, duplicate-safe voting, replication, commit, durable term/vote, and durable entry ACKs;
 - fail-stop behavior when stable storage rejects a write;
-- fixed 48-byte CRC32C WAL records, sequence validation, torn-tail recovery;
+- fixed 112-byte CRC32C WAL records, sequence validation, torn-tail recovery;
 - crash/restart reconstruction exclusively from durable WAL state;
 - deterministic bit-rot, misdirected-write, and phantom-prefix storage faults;
 - registered-file and registered-buffer `io_uring` data path using `WRITE_FIXED`;
@@ -26,7 +26,8 @@ criteria are tracked in [STATUS.md](STATUS.md).
 - namespace-safe eBPF/netem controller with mandatory cleanup;
 - checksummed snapshot image format and joint-quorum calculation primitive;
 - parallel seed sweeper, race tests, fuzz target, benchmarks, and CI;
-- initial TLA+ durable-election and crash model.
+- initial TLA+ durable-election and crash model;
+- versioned CRC32C peer/client protocol, TCP multi-process service, replicated deduplication, ReadIndex reads, bounded backpressure, health/metrics, and backup/restore.
 
 ## Verified Linux baseline
 

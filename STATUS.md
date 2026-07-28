@@ -27,6 +27,10 @@ Updated: 2026-07-28
 | Membership | old/new joint-majority calculation | unit tests |
 | Tooling | seed sweeper, race suite, fuzz target, CI | executable commands/workflows |
 | Formal | durable-election/crash TLA+ model | checked-in model |
+| Service | versioned peer/client protocol and multi-process TCP cluster | protocol and three-process restart tests |
+| Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
+| Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
+| Jepsen | live register workload and Knossos checker | implementation complete; Sentinel gate pending |
 
 Additional measured evidence:
 
@@ -41,12 +45,11 @@ Additional measured evidence:
 
 ## Remaining production gates
 
-### P0: usable distributed service
+### P0: Phase 5 external acceptance
 
-- expose a versioned client protocol and state-machine API;
-- run multiple OS processes with real peer transport;
-- implement request IDs, deduplication, retries, backpressure, and graceful shutdown;
-- export health, leadership, commit, storage, and fault-injection metrics.
+- run the isolated five-node Sentinel namespace gate;
+- record the process-kill and TC partition history;
+- check in the successful Jepsen/Knossos linearizability report.
 
 ### P0: independent verification
 

@@ -286,7 +286,8 @@ func (n *Node) onInstallSnapshotResponse(m Message) {
 // StartReadIndex begins a quorum-confirmed linearizable read barrier. Only one
 // read barrier is active at a time; callers provide a non-zero unique context.
 func (n *Node) StartReadIndex(context uint64) bool {
-	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 || n.termAtMust(n.Commit) != n.Term {
+	if n.State != Leader || n.Faulted || context == 0 || n.Commit == 0 ||
+		(n.termAtMust(n.Commit) != n.Term && !n.quorumMask(nodeBit(n.ID))) {
 		return false
 	}
 	n.readContext, n.readAckMask = context, nodeBit(n.ID)
@@ -349,7 +350,10 @@ func (n *Node) onVote(m Message) {
 func (n *Node) validNewEntry(entry Entry) bool {
 	switch entry.Kind {
 	case EntryNormal:
-		return entry.OldVoters == 0 && entry.NewVoters == 0
+		return entry.OldVoters == 0 && entry.NewVoters == 0 &&
+			(entry.Operation == CommandLegacy || ((entry.Operation == CommandPut || entry.Operation == CommandDelete) && entry.ClientID != 0 && entry.RequestID != 0))
+	case EntryNoop:
+		return entry.Command == 0 && entry.OldVoters == 0 && entry.NewVoters == 0 && entry.Operation == CommandLegacy
 	case EntryJointConfig:
 		return n.pendingConfig == 0 && n.votersNew == 0 &&
 			entry.OldVoters == n.votersOld && entry.OldVoters != 0 && entry.NewVoters != 0
@@ -503,6 +507,15 @@ func (n *Node) appendLocal(entry Entry) bool {
 		return false
 	}
 	n.Log = append(n.Log, entry)
+	if n.quorumMask(nodeBit(n.ID)) {
+		previous := n.Commit
+		n.Commit = n.lastIndex()
+		if !n.persistHardState(HardState{Term: n.Term, VotedFor: n.VotedFor, Commit: n.Commit}) {
+			n.Commit = previous
+			return false
+		}
+		n.applyCommittedConfigurations(previous+1, n.Commit)
+	}
 	return true
 }
 
@@ -556,8 +569,25 @@ func (n *Node) Propose(command uint64) bool {
 	return true
 }
 
+func (n *Node) ProposeRequest(operation CommandOp, clientID, requestID, key, value uint64) bool {
+	if n.State != Leader || n.Faulted || clientID == 0 || requestID == 0 ||
+		(operation != CommandPut && operation != CommandDelete) {
+		return false
+	}
+	entry := Entry{Term: n.Term, Operation: operation, ClientID: clientID,
+		RequestID: requestID, Key: key, Value: value}
+	if !n.appendLocal(entry) {
+		return false
+	}
+	n.broadcastAppend()
+	return true
+}
+
 func (n *Node) becomeLeader() {
 	n.State, n.Leader, n.elapsed = Leader, n.ID, 0
+	if !n.appendLocal(Entry{Term: n.Term, Kind: EntryNoop}) {
+		return
+	}
 	last := n.lastIndex() + 1
 	for _, p := range n.Peers {
 		n.next[p], n.match[p] = last, 0
@@ -613,14 +643,22 @@ func (n *Node) Drain(dst []Message) []Message {
 	return dst
 }
 
-func (n *Node) Apply() []uint64 {
-	out := make([]uint64, 0, n.Commit-n.Applied)
+func (n *Node) ApplyEntries(dst []Entry) []Entry {
 	for n.Applied < n.Commit {
 		n.Applied++
 		entry := n.entryAt(n.Applied)
 		if entry.Kind == EntryNormal {
-			out = append(out, entry.Command)
+			dst = append(dst, entry)
 		}
+	}
+	return dst
+}
+
+func (n *Node) Apply() []uint64 {
+	entries := n.ApplyEntries(nil)
+	out := make([]uint64, 0, len(entries))
+	for _, entry := range entries {
+		out = append(out, entry.Command)
 	}
 	return out
 }
@@ -634,6 +672,10 @@ func (n *Node) restoreConfigurationState() bool {
 		switch entry.Kind {
 		case EntryNormal:
 			if entry.OldVoters != 0 || entry.NewVoters != 0 {
+				return false
+			}
+		case EntryNoop:
+			if entry.Command != 0 || entry.OldVoters != 0 || entry.NewVoters != 0 || entry.Operation != CommandLegacy {
 				return false
 			}
 		case EntryJointConfig:

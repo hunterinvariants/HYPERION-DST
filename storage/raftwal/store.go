@@ -64,7 +64,7 @@ func Open(device wal.Device) (*Store, error) {
 		if offset > uint64(len(s.data)) {
 			return nil, fmt.Errorf("raftwal: log index gap at %d", e.Index)
 		}
-		entry := raft.Entry{Term: e.Term, Command: e.Command, Kind: raft.EntryKind(e.Kind), OldVoters: e.OldVoters, NewVoters: e.NewVoters}
+		entry := raft.Entry{Term: e.Term, Command: e.Command, Kind: raft.EntryKind(e.Kind), OldVoters: e.OldVoters, NewVoters: e.NewVoters, Operation: raft.CommandOp(e.Operation), ClientID: e.ClientID, RequestID: e.RequestID, Key: e.Key, Value: e.Value}
 		if offset < uint64(len(s.data)) {
 			s.data = s.data[:offset]
 		}
@@ -94,6 +94,8 @@ func (s *Store) Append(index uint64, entry raft.Entry) error {
 	if err := s.append(storage.Entry{
 		Index: index, Term: entry.Term, Command: entry.Command, Kind: uint8(entry.Kind),
 		OldVoters: entry.OldVoters, NewVoters: entry.NewVoters,
+		Operation: uint8(entry.Operation), ClientID: entry.ClientID, RequestID: entry.RequestID,
+		Key: entry.Key, Value: entry.Value,
 	}); err != nil {
 		return err
 	}

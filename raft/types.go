@@ -14,6 +14,15 @@ const (
 	EntryNormal EntryKind = iota
 	EntryJointConfig
 	EntryFinalConfig
+	EntryNoop
+)
+
+type CommandOp uint8
+
+const (
+	CommandLegacy CommandOp = iota
+	CommandPut
+	CommandDelete
 )
 
 type Entry struct {
@@ -22,6 +31,11 @@ type Entry struct {
 	Kind      EntryKind
 	OldVoters uint64
 	NewVoters uint64
+	Operation CommandOp
+	ClientID  uint64
+	RequestID uint64
+	Key       uint64
+	Value     uint64
 }
 
 type MessageType uint8

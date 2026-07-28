@@ -105,8 +105,8 @@ implemented and covered by crash/restart and Linux io_uring acceptance tests.
 
 A completed write linearizes when its log entry first becomes committed. Raft
 implements quorum-confirmed ReadIndex barriers for linearizable reads. A
-production client protocol remains a Phase 5 gate, so end-to-end strict
-serializability is not yet claimed.
+versioned client protocol and replicated deduplication layer now implement this boundary.
+End-to-end strict serializability remains gated on the live Phase 5 Jepsen/Knossos run.
 
 For completed operations in history `H`, a valid sequential history `S` must
 preserve real-time precedence:

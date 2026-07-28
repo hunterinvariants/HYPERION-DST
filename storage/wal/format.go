@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	RecordSize = 72
-	version    = uint16(2)
+	RecordSize = 112
+	version    = uint16(3)
 )
 
 var (
-	magic       = [8]byte{'H', 'Y', 'P', 'W', 'A', 'L', '0', '2'}
+	magic       = [8]byte{'H', 'Y', 'P', 'W', 'A', 'L', '0', '3'}
 	crcTable    = crc32.MakeTable(crc32.Castagnoli)
 	ErrChecksum = errors.New("wal: checksum mismatch")
 	ErrFormat   = errors.New("wal: invalid record format")
@@ -39,7 +39,14 @@ func Encode(dst *[RecordSize]byte, r Record) {
 	clear(dst[46:52])
 	binary.LittleEndian.PutUint64(dst[52:60], r.Entry.OldVoters)
 	binary.LittleEndian.PutUint64(dst[60:68], r.Entry.NewVoters)
-	binary.LittleEndian.PutUint32(dst[68:72], crc32.Checksum(dst[:68], crcTable))
+	binary.LittleEndian.PutUint16(dst[68:70], uint16(r.Entry.Operation))
+	clear(dst[70:72])
+	binary.LittleEndian.PutUint64(dst[72:80], r.Entry.ClientID)
+	binary.LittleEndian.PutUint64(dst[80:88], r.Entry.RequestID)
+	binary.LittleEndian.PutUint64(dst[88:96], r.Entry.Key)
+	binary.LittleEndian.PutUint64(dst[96:104], r.Entry.Value)
+	clear(dst[104:108])
+	binary.LittleEndian.PutUint32(dst[108:112], crc32.Checksum(dst[:108], crcTable))
 }
 
 func Decode(src []byte) (Record, error) {
@@ -47,8 +54,8 @@ func Decode(src []byte) (Record, error) {
 		binary.LittleEndian.Uint16(src[8:10]) != version {
 		return Record{}, ErrFormat
 	}
-	want := binary.LittleEndian.Uint32(src[68:72])
-	if got := crc32.Checksum(src[:68], crcTable); got != want {
+	want := binary.LittleEndian.Uint32(src[108:112])
+	if got := crc32.Checksum(src[:108], crcTable); got != want {
 		return Record{}, ErrChecksum
 	}
 	return Record{
@@ -60,6 +67,11 @@ func Decode(src []byte) (Record, error) {
 			Kind:      uint8(binary.LittleEndian.Uint16(src[44:46])),
 			OldVoters: binary.LittleEndian.Uint64(src[52:60]),
 			NewVoters: binary.LittleEndian.Uint64(src[60:68]),
+			Operation: uint8(binary.LittleEndian.Uint16(src[68:70])),
+			ClientID:  binary.LittleEndian.Uint64(src[72:80]),
+			RequestID: binary.LittleEndian.Uint64(src[80:88]),
+			Key:       binary.LittleEndian.Uint64(src[88:96]),
+			Value:     binary.LittleEndian.Uint64(src[96:104]),
 		},
 	}, nil
 }
