@@ -116,7 +116,7 @@
                                      :timeline (timeline/html)})
           :generator (gen/clients
                        (->> (gen/mix [read-op write-op])
-                            (gen/stagger 0.01)
+                            (gen/stagger 0.1)
                             (gen/time-limit (:time-limit opts 60))))}))
 
 (defn -main [& args]

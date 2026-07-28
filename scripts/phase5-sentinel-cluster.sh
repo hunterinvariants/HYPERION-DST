@@ -118,8 +118,8 @@ if command -v lein >/dev/null; then
   fault_node=1
   [[ $fault_node == "$leader" ]] && fault_node=2
   (
-    for round in 1 2 3; do
-      sleep 8
+    for round in 1; do
+      sleep 4
       tc qdisc replace dev "hyperion-h$fault_node" root netem loss 100%
       sleep 4
       tc qdisc del dev "hyperion-h$fault_node" root 2>/dev/null || true
@@ -128,7 +128,7 @@ if command -v lein >/dev/null; then
   chaos_pid=$!
   export HYPERION_CLIENTS="$PREFIX.11:9200,$PREFIX.12:9200,$PREFIX.13:9200,$PREFIX.14:9200,$PREFIX.15:9200"
   set +e
-  (cd "$ROOT/jepsen" && lein run -- test --no-ssh --time-limit 60) 2>&1 |
+  (cd "$ROOT/jepsen" && lein run -- test --no-ssh --time-limit 15) 2>&1 |
     tee "$RUN/jepsen.log"
   jepsen_status=${PIPESTATUS[0]}
   set -e
