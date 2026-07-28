@@ -31,6 +31,18 @@
 (def dummy-ssh?
   (delay (= "1" (System/getenv "HYPERION_JEPSEN_DUMMY_SSH"))))
 
+;; The register key this run operates on. Knossos checks a history against a
+;; register that starts empty, so the key MUST NOT already hold a value when the
+;; history begins. Reusing a fixed key against a cluster that survived an earlier
+;; run makes the checker report a read of a value nothing in this history wrote,
+;; which looks exactly like a linearizability violation and is not one. A key
+;; unique per run removes the possibility entirely; set HYPERION_JEPSEN_KEY to
+;; pin it when reproducing a recorded history.
+(def register-key
+  (delay (if-let [value (System/getenv "HYPERION_JEPSEN_KEY")]
+           (Long/parseLong value)
+           (inc (rem (System/nanoTime) 1000000000)))))
+
 (defn le-buffer [size]
   (doto (ByteBuffer/allocate size) (.order ByteOrder/LITTLE_ENDIAN)))
 
@@ -104,7 +116,7 @@
     (let [request-id (swap! sequence inc)
           wire-op (if (= :read (:f op)) 3 1)]
       (try
-        (let [response (invoke-node node wire-op client-id request-id 1 (or (:value op) 0))]
+        (let [response (invoke-node node wire-op client-id request-id @register-key (or (:value op) 0))]
           (case (:status response)
             0 (assoc op :type :ok :value (if (= :read (:f op)) (:value response) (:value op)))
             1 (assoc op :type :fail :error :not-leader)

@@ -34,57 +34,71 @@ are not generalized hardware claims.
 
 ## Linearizability result
 
-The live five-node workload used Jepsen with the Knossos register checker. The
-raw history is checked in, so the numbers below can be recounted rather than
-taken on trust:
+The live five-node workload used Jepsen with the Knossos register checker. Raw
+histories are checked in, so every number below can be recounted rather than
+taken on trust.
 
-`jepsen/store/hyperion-live-linearizability/20260728T045906.512+0200/`
-(`results.edn`, `history.txt`, `jepsen.log`).
+Primary result: `jepsen/store/hyperion-live-linearizability/20260728T041413.407+0200/`
 
 ```clojure
 {:linearizable {:valid? true,
-                :model #knossos.model.Register{:value 263637},
+                :model #knossos.model.Register{:value 571763},
                 :final-paths (),
                 :configs ()},
  :timeline {:valid? true},
  :valid? true}
 ```
 
-Exactly what that history contains, because the composition matters more than
-the verdict:
+Composition of that history, counted from the checked-in `history.txt`:
 
 | Property | Value |
 |---|---:|
-| Command | `lein run test --no-ssh --time-limit 15` |
-| Wall-clock window | 15 s, concurrency 5 |
-| Invoked operations | 150 |
-| Completed `:ok` | 25 |
-| Rejected `:fail` (`:not-leader`) | 75 |
-| Indeterminate `:info` | 50 |
+| Command | `lein run test --no-ssh --time-limit 60` |
+| Wall-clock window | 60 s, concurrency 5 |
+| Fault exposure | 3 rounds of `netem loss 100%` on one node's veth |
+| Invoked operations | 5,763 |
+| Completed `:ok` | 957 |
+| Rejected `:fail` (`:not-leader`) | 3,421 |
+| Indeterminate `:info` | 1,385 |
 
 Two qualifications a reader needs. First, faults are applied **outside** Jepsen:
 `scripts/phase5-sentinel-cluster.sh` runs a background subshell that puts
-`netem loss 100%` on one node's host veth for about four seconds inside the
-fifteen-second window and then removes it. The test itself uses `gen/clients`
-with the noop nemesis from `tests/noop-test`, so no nemesis operations appear in
-the history and the fault window cannot be read off it -- the `Connection
-refused` `:info` entries are the only trace. Second, a leader process kill
-happens earlier in that script, before the measured window, not during it.
+`netem loss 100%` on one node's host veth and removes it again. The test uses
+`gen/clients` with the noop nemesis from `tests/noop-test`, so no nemesis
+operations appear in the history and the fault windows cannot be read off it --
+the 1,373 `Connection refused` and 12 `Connect timed out` `:info` entries are the
+only trace. Second, a leader process kill happens earlier in that script, before
+the measured window rather than during it.
 
-So the supported claim is: **under a four-second total network isolation of one
-node, a 15-second five-client register history containing 25 completed
-operations was linearizable.** That is a real result on a real cluster and it is
-now re-checkable. It is not a long-running, nemesis-driven Jepsen campaign, and
-25 completed operations is a small history for a linearizability argument.
-Widening it is tracked in `ROADMAP.md` rather than claimed here.
+So the supported claim is: **a 60-second, five-client register history with 957
+completed operations, taken while one node was repeatedly isolated with total
+packet loss, was linearizable.**
 
-A reduced version of the same workload now also runs in CI on every push
+### The rest of that session
+
+Six further runs were recorded the same morning, two of which report
+`:valid? false`. They are not a consensus defect: both histories begin with the
+register already holding a value, so the checker correctly reports a read of
+something nothing in that history wrote. The value read in the first failure is
+571763 -- the exact final write of the run above, which is checked in and can be
+verified. The workload used a fixed register key, so a history running against a
+state machine that had survived an earlier history saw the previous value.
+
+`jepsen/src/hyperion/core.clj` now takes a register key unique to each run
+(`HYPERION_JEPSEN_KEY` pins it when reproducing a recorded history), so leftover
+state can no longer be mistaken for a violation. The full session, including the
+runs with no resolved verdict, is documented in `jepsen/store/ANALYSIS.md`, and
+the `results.edn` of both failures is checked in alongside it.
+
+### Continuous coverage
+
+A reduced version of the same workload runs in CI on every push
 (`.github/workflows/jepsen.yml`): same client protocol, same Knossos register
 model, same checker, against a five-process loopback cluster. It fails the build
-unless the checker reports `:valid? true`, and the full history is uploaded as a
-build artifact. The CI run is smaller and exercises process faults only -- a
-loopback cluster has no namespaces to partition -- so the networked Sentinel gate
-above remains the authority for behaviour under network faults.
+unless the checker reports `:valid? true`, and the history is uploaded as a build
+artifact. The CI run is smaller and exercises process faults only -- a loopback
+cluster has no namespaces to partition -- so the networked Sentinel result above
+remains the authority for behaviour under network faults.
 
 Knossos is the checker actually used by this repository; no Porcupine result is
 claimed.

@@ -60,7 +60,7 @@ On the `sentinel` Linux host, the following gates passed:
 - namespace, veth, map, and program cleanup;
 - complete `go test ./... -race -count=1` suite;
 - five-process Phase 5 failover, health, metrics, backup/restore gate;
-- bounded live Jepsen/Knossos workload under a four-second TC isolation of one node: `valid? true` over a 15-second, 150-operation history (25 completed); raw history checked in under `jepsen/store/`;
+- live Jepsen/Knossos workload under repeated total packet loss on one node: `valid? true` over a 60-second, 5,763-operation history (957 completed); raw history checked in under `jepsen/store/`;
 - bounded TLC model: 74,698,942 states generated, 9,560,875 distinct, no invariant violation.
 
 Measured durable block writes on ext4 over `/dev/sda2`:

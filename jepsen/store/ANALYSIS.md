@@ -59,17 +59,33 @@ whatever state the cluster is in when the history starts.
 
 ## What the session actually supports
 
-`20260728T041413.407+0200` is the strongest recorded result: 5,763 invoked
-operations, 957 completed, 60 seconds at concurrency 5, under three rounds of
-`netem loss 100%` on one node's veth -- `:valid? true`.
+`20260728T041413.407+0200` is the strongest recorded result and its history is
+checked in, so these counts come from the file rather than from a report:
+
+| | |
+|---|---:|
+| Invoked | 5,763 |
+| Completed `:ok` | 957 |
+| Rejected `:fail` (`:not-leader`) | 3,421 |
+| Indeterminate `:info` | 1,385 (1,373 `Connection refused`, 12 `Connect timed out`) |
+| Reads / writes invoked | 2,831 / 2,932 |
+
+60 seconds at concurrency 5, under three rounds of `netem loss 100%` on one
+node's veth -- `:valid? true`.
+
+The last `:ok` write in that history is `571763`, which is also the register
+value in its `results.edn` and the value the next run read out of nowhere. The
+carried-over-state explanation is therefore verifiable from the checked-in files
+alone.
 
 The two failures do not weaken it. They were the harness reading a register it
 had not cleaned up, and the counterexamples say so explicitly.
 
 ## Still open
 
-- Only `results.edn` is checked in for the six earlier runs; the full histories
-  live on `sentinel`.
+- `results.edn` and `history.txt` are checked in for `041413`; for the other
+  runs only `results.edn` where one exists. The remaining histories live on
+  `sentinel`.
 - Two runs (`041055`, `045550`) have no resolved verdict and one (`044932`) has
   no `results.edn` at all. Those were not investigated.
 - The session predates the key-isolation fix, so no recorded run yet exercises
