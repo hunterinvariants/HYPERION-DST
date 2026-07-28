@@ -396,9 +396,14 @@ func (n *Node) onAppendResponse(m Message) {
 			previous := n.Commit
 			n.Commit = idx
 			n.applyCommittedConfigurations(previous+1, n.Commit)
-			n.broadcastAppend()
+			if n.State == Leader {
+				n.broadcastAppend()
+			}
 			break
 		}
+	}
+	if n.State != Leader {
+		return
 	}
 	if n.next[m.From] < n.lastIndex()+1 {
 		n.appendTo(m.From)
@@ -421,11 +426,10 @@ func voterMask(ids []uint32) (uint64, bool) {
 }
 
 // ProposeJoint appends C_old,new. Only one membership transition may be in
-// flight, and the local node must remain a voter through the joint phase.
+// flight. A leader removed by C_new steps down when the final entry commits.
 func (n *Node) ProposeJoint(newVoters []uint32) bool {
 	newMask, ok := voterMask(newVoters)
-	if !ok || newMask&nodeBit(n.ID) == 0 || n.State != Leader ||
-		n.Faulted || n.votersNew != 0 || n.pendingConfig != 0 {
+	if !ok || n.State != Leader || n.Faulted || n.votersNew != 0 || n.pendingConfig != 0 {
 		return false
 	}
 	n.ensurePeers(newMask)
@@ -492,6 +496,9 @@ func (n *Node) applyCommittedConfigurations(first, last uint64) {
 			n.ensurePeers(entry.OldVoters | entry.NewVoters)
 		case EntryFinalConfig:
 			n.votersOld, n.votersNew = entry.OldVoters, 0
+			if !n.isVoter(n.ID) {
+				n.State, n.Leader, n.readReady = Follower, 0, false
+			}
 		}
 		if index == n.pendingConfig {
 			n.pendingConfig = 0
@@ -521,7 +528,9 @@ func (n *Node) becomeLeader() {
 
 func (n *Node) broadcastAppend() {
 	for _, p := range n.Peers {
-		n.appendTo(p)
+		if n.isVoter(p) {
+			n.appendTo(p)
+		}
 	}
 }
 

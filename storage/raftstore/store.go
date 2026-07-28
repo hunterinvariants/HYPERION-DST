@@ -20,6 +20,7 @@ type Recovery struct {
 type Store struct {
 	wal      *raftwal.Store
 	snapshot *snapshot.Store
+	pending  raft.Snapshot
 }
 
 func Open(device wal.Device, snapshotPath string) (*Store, Recovery, error) {
@@ -43,7 +44,11 @@ func Open(device wal.Device, snapshotPath string) (*Store, Recovery, error) {
 			return nil, Recovery{}, fmt.Errorf(
 				"raftstore: snapshot %d exceeds WAL last index", image.LastIndex)
 		}
-		if err := walStore.CompactLog(image.LastIndex); err != nil {
+		if term, present := walStore.Term(image.LastIndex); present && term == image.LastTerm {
+			if err := walStore.CompactLog(image.LastIndex); err != nil {
+				return nil, Recovery{}, err
+			}
+		} else if err := walStore.ResetBase(image.LastIndex, image.LastTerm); err != nil {
 			return nil, Recovery{}, err
 		}
 		hard, base, entries = walStore.StateWithBase()
@@ -77,15 +82,31 @@ func (s *Store) Append(index uint64, entry raft.Entry) error {
 }
 
 func (s *Store) SaveSnapshot(snap raft.Snapshot) error {
-	return s.snapshot.Save(snapshot.Image{
+	if err := s.snapshot.Save(snapshot.Image{
 		LastIndex: snap.LastIndex,
 		LastTerm:  snap.LastTerm,
 		State:     snap.State,
 		OldVoters: snap.OldVoters,
 		NewVoters: snap.NewVoters,
-	})
+	}); err != nil {
+		return err
+	}
+	s.pending = snap
+	return nil
 }
 
 func (s *Store) CompactLog(index uint64) error {
-	return s.wal.CompactLog(index)
+	if s.pending.LastIndex != index {
+		return fmt.Errorf("raftstore: no durable snapshot for compaction index %d", index)
+	}
+	var err error
+	if term, present := s.wal.Term(index); present && term == s.pending.LastTerm {
+		err = s.wal.CompactLog(index)
+	} else {
+		err = s.wal.ResetBase(index, s.pending.LastTerm)
+	}
+	if err == nil {
+		s.pending = raft.Snapshot{}
+	}
+	return err
 }

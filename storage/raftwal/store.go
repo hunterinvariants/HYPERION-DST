@@ -14,6 +14,7 @@ import (
 const (
 	hardStateIndex uint64 = 0
 	compactIndex          = ^uint64(0)
+	resetIndex            = ^uint64(0) - 1
 )
 
 type Store struct {
@@ -31,6 +32,14 @@ func Open(device wal.Device) (*Store, error) {
 	s := &Store{log: log, data: []raft.Entry{{}}}
 	for _, record := range records {
 		e := record.Entry
+		if e.Index == resetIndex {
+			if e.Term < s.base {
+				return nil, fmt.Errorf("raftwal: reset index regression %d", e.Term)
+			}
+			s.base = e.Term
+			s.data = []raft.Entry{{Term: e.Command}}
+			continue
+		}
 		if e.Index == compactIndex {
 			if e.Term < s.base || e.Term > s.base+uint64(len(s.data))-1 {
 				return nil, fmt.Errorf("raftwal: invalid compaction index %d", e.Term)
@@ -100,6 +109,27 @@ func (s *Store) State() (raft.HardState, []raft.Entry) {
 
 func (s *Store) StateWithBase() (raft.HardState, uint64, []raft.Entry) {
 	return s.hard, s.base, append([]raft.Entry(nil), s.data...)
+}
+
+func (s *Store) Term(index uint64) (uint64, bool) {
+	if index < s.base || index > s.base+uint64(len(s.data))-1 {
+		return 0, false
+	}
+	return s.data[index-s.base].Term, true
+}
+
+// ResetBase installs a snapshot base even when the local log has no matching
+// entry. Its durable fence discards the entire previous logical generation.
+func (s *Store) ResetBase(index, term uint64) error {
+	if index < s.base {
+		return fmt.Errorf("raftwal: reset index regression %d", index)
+	}
+	if err := s.append(storage.Entry{Index: resetIndex, Term: index, Command: term}); err != nil {
+		return err
+	}
+	s.base = index
+	s.data = []raft.Entry{{Term: term}}
+	return nil
 }
 
 // CompactLog durably appends a compaction fence before releasing the covered
