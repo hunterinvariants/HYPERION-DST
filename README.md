@@ -1,24 +1,82 @@
 # HYPERION-DST
 
 [![CI](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml)
+[![Nightly](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/nightly.yml)
 [![Kernel build](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml)
 [![Formal](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml)
 ![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
 
-HYPERION-DST is a verification-focused distributed consensus engine combining
-a deterministic simulator, durable Raft state, a checksummed WAL, registered
-Linux `io_uring` I/O, and isolated XDP/TC kernel fault injection.
+Test distributed protocols the way you test pure functions: run your own
+consensus code under deterministic virtual time and injected network faults,
+check invariants after every step, and reproduce any failure from its seed.
+
+A qualified Raft implementation ships as the worked reference — durable
+`io_uring` storage, a checksummed WAL, XDP/TC kernel fault injection,
+Jepsen/Knossos linearizability, and a bounded TLA+ model. It is a reference
+system, not a turnkey database.
 
 The project reports only capabilities backed by executable tests, bounded model
-checking, or checked-in measurements. All six scoped roadmap phases are
-complete; evidence bounds and remaining optimizations are tracked in
-[STATUS.md](STATUS.md).
+checking, or checked-in measurements. Every claim carries its bounds in
+[EVIDENCE.md](EVIDENCE.md) and [STATUS.md](STATUS.md).
 
-The implementation and its six scoped qualification phases are frozen at the
-documented reference baseline. See [EVIDENCE.md](EVIDENCE.md) for the final
-evidence index and the precise bounds of every claim.
+## Try it in a minute
 
-## What works today
+```bash
+go test ./... -race -count=1
+go test ./examples/paxos -v
+go run ./cmd/hyperion simulate -config examples/leader-partition.json
+```
+
+The second command is the point of the project: a complete protocol that is
+**not** Raft — single-decree Paxos — driven through the same engine, with its
+own invariants and partition campaigns. See
+[examples/paxos](examples/paxos/README.md).
+
+Start your own from a working skeleton:
+
+```bash
+go run ./cmd/hyperion new mysystem && cd mysystem && go mod tidy && go test ./... -v
+```
+
+Every command lives behind one umbrella binary. Commands needing kernel
+facilities a build cannot reach are absent rather than listed and failing.
+
+```bash
+go run ./cmd/hyperion help
+```
+
+## What you can build with it
+
+Four things are pluggable. [docs/DEVELOPERS.md](docs/DEVELOPERS.md) is the guide;
+[docs/API.md](docs/API.md) says which identifiers are contractual.
+
+**Your protocol.** Implement four methods for `dst.Cluster` and two for
+`dst.Wire`, and the engine supplies virtual time, a seeded schedule, message
+loss and delay, and a reproducible execution trace. It is generic over your
+message type, so nothing is boxed and the hot path allocates nothing.
+
+**Your properties.** A `dst.Invariant` is evaluated after every step. A failure
+comes back as a `dst.Violation` carrying the property name, the step, and the
+trace hash — a coordinate you can return to, not a message you have to
+reproduce by guesswork.
+
+**Your faults.** `Split`, `Isolate`, one-way `Link` failures, and `During` for
+time windows. Injectors are consulted *after* the engine draws each message's
+random loss and delay, so the same seed produces the same schedule with and
+without a fault, and an A/B comparison means something.
+
+**Your storage.** Implement `wal.Device` and you inherit the checksummed record
+format, sequence validation, and torn-tail recovery of `wal.Log`. Verify it
+against `storagetest.RunDeviceSuite` before trusting it with consensus state.
+
+A run can be declared as a file rather than written into a test:
+
+```json
+{"seed": "0x4A2C", "nodes": 5, "steps": 1200, "proposeEvery": 17,
+ "faults": [{"type": "split", "a": [1], "b": [2,3,4,5], "start": 200, "end": 700}]}
+```
+
+## The Raft reference
 
 - deterministic virtual time, seeded scheduling, message delay/drop, and restart;
 - Raft pre-vote, elections, duplicate-safe voting, replication, commit, durable term/vote, and durable entry ACKs;
@@ -35,6 +93,19 @@ evidence index and the precise bounds of every claim.
 - parallel seed sweeper, race tests, fuzz target, benchmarks, and CI;
 - bounded TLA+ model covering election, replication, commit, snapshots, membership, and crash recovery;
 - versioned CRC32C peer/client protocol, TCP multi-process service, replicated deduplication, ReadIndex reads, bounded backpressure, health/metrics, and backup/restore.
+
+A cluster is declared once and shared by every node, which selects its own entry
+by identifier. The peer list is derived from the file, so the processes cannot
+disagree about who the members are.
+
+```bash
+go run ./cmd/hyperiond -config examples/cluster.json -id 3
+```
+
+The extracted engine is verified against the simulator these gates qualified:
+7,000 paired runs compare the two at every tick and require a bit-identical
+execution. Evidence in
+[benchmarks/sentinel-dst-engine-2026-08-16.md](benchmarks/sentinel-dst-engine-2026-08-16.md).
 
 ## Verified Linux baseline
 
@@ -64,39 +135,12 @@ Measured durable block writes on ext4 over `/dev/sda2`:
 This is a block-device baseline, not a physical NVMe measurement. Full evidence
 and commands are in [benchmarks/sentinel-block-device-2026-07-28.md](benchmarks/sentinel-block-device-2026-07-28.md).
 
-## Quick start
-
-```bash
-go test ./... -race -count=1
-go run ./cmd/hyperion-sim -seed 0x4A2C -steps 10000 -nodes 5
-go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
-go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
-```
-
-Every command is also reachable through one umbrella binary. The subcommands run
-the same implementations as the standalone binaries, with the same flags and
-exit codes; commands needing kernel facilities the build cannot reach are not
-listed.
-
-```bash
-go run ./cmd/hyperion help
-go run ./cmd/hyperion seeds -from 1 -to 1000 -steps 1000
-```
-
-A cluster can be declared once and shared by every node, which selects its own
-entry by identifier. The peer list is derived from the file, so the processes
-of a cluster cannot disagree about who the members are. See
-[examples/cluster.json](examples/cluster.json).
-
-```bash
-go run ./cmd/hyperiond -config examples/cluster.json -id 3
-```
-
 Linux capability and integration gates:
 
 ```bash
-go run ./cmd/hyperion-probe -entries 32
+go run ./cmd/hyperion probe -entries 32
 HYPERION_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal -count=1 -v
+go run ./cmd/hyperion verify -json
 ```
 
 The chaos controller must be used only with its dedicated `hyperion-*`
@@ -106,15 +150,17 @@ interface. See [bpf/README.md](bpf/README.md).
 ## Architecture
 
 ```text
-seed runner / deterministic simulator
-                |
-                v
+your protocol            the Raft reference
+       \                        /
+        dst.Cluster / dst.Wire
+                 |
+   deterministic engine: virtual time, seeded
+   schedule, faults, invariants, trace hash
+                 |
         durable Raft core
           |           |
-          v           v
      CRC32C WAL   snapshots
           |
-          v
  registered io_uring + O_DIRECT
 
 isolated netns -> XDP / TC / netem -> controlled kernel faults
@@ -122,30 +168,29 @@ isolated netns -> XDP / TC / netem -> controlled kernel faults
 
 ## Repository map
 
+- `dst/`: the protocol-agnostic engine, invariants, and fault injection;
+- `dst/scenario/`: the declarative run format;
+- `dst/raftcluster/`: the Raft adapter, and the equivalence campaigns;
+- `examples/paxos/`: a complete protocol that is not Raft;
 - `raft/`: consensus state machine, persistence boundary, quorum logic;
-- `sim/`: deterministic scheduler, crash/restart, safety invariants;
+- `sim/`: the qualified simulator, retained as the equivalence reference;
 - `storage/wal/`: portable WAL format and recovery;
-- `storage/uring/`: Linux ring mappings and registered I/O;
-- `storage/uringwal/`: WAL-to-aligned-io_uring adapter;
+- `storage/storagetest/`: conformance suite for an alternative backend;
+- `storage/uring/`, `storage/uringwal/`: Linux registered I/O and its WAL adapter;
 - `storage/snapshot/`: checksummed snapshot images;
+- `server/`: the replicated service and its cluster file format;
 - `chaos/`, `bpf/`: safe controller and kernel programs;
+- `internal/cli/`: one implementation per command, shared by every binary;
 - `verification/tla/`: current formal model;
 - `benchmarks/`: checked-in measurement evidence.
 
-## Using the machinery on your own system
+## Documentation
 
-The deterministic simulator, its invariant checking, and its fault injection are
-not specific to Raft. [docs/DEVELOPERS.md](docs/DEVELOPERS.md) covers driving
-your own protocol through the engine, declaring campaigns as scenario files, and
-verifying an alternative storage backend against the device conformance suite.
+- [docs/DEVELOPERS.md](docs/DEVELOPERS.md) — driving your own protocol, properties, faults, and storage;
+- [docs/API.md](docs/API.md) — what is contractual, and what versioning will mean;
+- [CONTRIBUTING.md](CONTRIBUTING.md) — the evidence bar a change has to clear;
+- [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [EVIDENCE.md](EVIDENCE.md).
 
-```bash
-go run ./cmd/hyperion simulate -config examples/leader-partition.json
-go test ./examples/paxos -v
-```
-
-[examples/paxos](examples/paxos/README.md) is a complete worked example of a
-protocol that is not Raft — single-decree Paxos with its own invariants,
-partition campaigns, and scenario file.
-
-See [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), and [ROADMAP.md](ROADMAP.md).
+The six scoped qualification phases are complete and frozen at the documented
+reference baseline. Framework work claims no phase acceptance and does not amend
+that record.
