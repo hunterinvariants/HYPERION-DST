@@ -77,6 +77,10 @@ recorded evidence in `benchmarks/` invoke them by name and branch on their
 status. Output format is not contractual, with one exception: the final status
 line of `hyperion-seeds` is quoted in evidence documents.
 
+`simulate` and `verify` exist only as subcommands of `hyperion`. They are newer
+than the extraction, nothing historical refers to them, and a new command does
+not need a standalone binary to keep a promise nobody made.
+
 Removing a flag, changing its default, or changing an exit code is a break at
 tier 1 severity.
 
