@@ -1,0 +1,23 @@
+{
+  "name": "paxos under a healing partition",
+  "seed": "0x5EED",
+  "nodes": 5,
+  "steps": 900,
+  "dropPermille": 30,
+  "maxDelay": 4,
+  "proposeEvery": 41,
+  "faults": [
+    {
+      "type": "split",
+      "a": [1, 2],
+      "b": [3, 4, 5],
+      "start": 100,
+      "end": 500
+    },
+    {
+      "type": "link",
+      "from": 4,
+      "to": 5
+    }
+  ]
+}

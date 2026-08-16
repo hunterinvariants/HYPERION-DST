@@ -52,8 +52,12 @@ engine := dst.New[myMessage](dst.Config{Seed: 1, DropPermille: 50, MaxDelay: 5},
 engine.Run(10_000)
 ```
 
-`dst/raftcluster` is the worked example: it is what this repository's own Raft
-core looks like behind these interfaces, and it is verified to drive the core
+Two worked examples exist. `examples/paxos` is a complete, self-contained
+protocol that is deliberately **not** Raft — single-decree Paxos, its own
+invariants, its own scenario file, and campaigns that refuse to pass without
+exercising the mechanism that makes it safe. Start there.
+`dst/raftcluster` is the other: it is what this repository's own Raft core
+looks like behind these interfaces, and it is verified to drive the core
 identically to the simulator that was qualified before the extraction.
 
 ### The determinism contract

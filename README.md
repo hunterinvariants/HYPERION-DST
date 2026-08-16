@@ -132,6 +132,11 @@ verifying an alternative storage backend against the device conformance suite.
 
 ```bash
 go run ./cmd/hyperion simulate -config examples/leader-partition.json
+go test ./examples/paxos -v
 ```
+
+[examples/paxos](examples/paxos/README.md) is a complete worked example of a
+protocol that is not Raft — single-decree Paxos with its own invariants,
+partition campaigns, and scenario file.
 
 See [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), and [ROADMAP.md](ROADMAP.md).
