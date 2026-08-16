@@ -127,21 +127,13 @@ func TestAgreementInvariantDetectsTwoChosenValues(t *testing.T) {
 	}
 
 	err := engine.CheckInvariants()
-	var violation *dst.Violation
 	if err == nil {
 		t.Fatal("two chosen values went unnoticed")
 	}
-	if !asViolation(err, &violation) || violation.Invariant != "at most one value chosen" {
+	violation, ok := err.(*dst.Violation)
+	if !ok || violation.Invariant != "at most one value chosen" {
 		t.Fatalf("reported %v, want the agreement invariant", err)
 	}
-}
-
-func asViolation(err error, target **dst.Violation) bool {
-	v, ok := err.(*dst.Violation)
-	if ok {
-		*target = v
-	}
-	return ok
 }
 
 // TestScenarioFileDrivesPaxos shows that the scenario format is not

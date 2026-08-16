@@ -20,12 +20,12 @@ go test ./examples/paxos -v
 ## The adapter is the whole integration
 
 ```go
-func (c *Cluster) Nodes() []uint32                        { return c.ids }
-func (c *Cluster) Tick(id uint32)                         { c.nodes[id].Tick() }
-func (c *Cluster) Deliver(id uint32, m Message)           { c.nodes[id].Step(m) }
+func (c *Cluster) Nodes() []uint32                          { return c.ids }
+func (c *Cluster) Tick(id uint32)                           { c.nodes[id].Tick() }
+func (c *Cluster) Deliver(id uint32, m Message)             { c.nodes[id].Step(m) }
 func (c *Cluster) Drain(id uint32, dst []Message) []Message { return c.nodes[id].Drain(dst) }
-func (c *Cluster) Route(m Message) (uint32, uint32)       { return m.From, m.To }
-func (c *Cluster) Digest(m Message) (uint8, uint64)       { return uint8(m.Kind), m.Num }
+func (c *Cluster) Route(m Message) (uint32, uint32)         { return m.From, m.To }
+func (c *Cluster) Digest(m Message) (uint8, uint64)         { return uint8(m.Kind), m.Num }
 ```
 
 That is all the engine needs. It supplies virtual time, a seeded schedule,

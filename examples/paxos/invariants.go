@@ -30,7 +30,7 @@ func (c *Cluster) checkSingleChoice() error {
 }
 
 // checkPromiseRespected requires an acceptor's accepted number never to sit
-// below the number it has promised on.
+// above the number it has promised on.
 func (c *Cluster) checkPromiseRespected() error {
 	for _, id := range c.ids {
 		node := c.nodes[id]
