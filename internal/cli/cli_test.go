@@ -12,7 +12,7 @@ import (
 // here is also the name of a standalone binary under cmd/ and is referenced by
 // the recorded qualification gates.
 func expectedNames() []string {
-	names := []string{"backup", "ctl", "probe", "seeds", "serve", "sim", "uring-bench"}
+	names := []string{"backup", "ctl", "probe", "seeds", "serve", "sim", "simulate", "uring-bench"}
 	if runtime.GOOS == "linux" {
 		names = append(names, "chaos")
 		if runtime.GOARCH == "amd64" {

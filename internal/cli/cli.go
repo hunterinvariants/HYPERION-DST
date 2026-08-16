@@ -33,6 +33,7 @@ func Commands() []Command {
 		seedsCommand(),
 		serveCommand(),
 		simCommand(),
+		simulateCommand(),
 		uringBenchCommand(),
 	}
 	all = append(all, platformCommands()...)
