@@ -78,6 +78,8 @@ type Engine[M any] struct {
 	trace      [32]byte
 	scratch    []M
 	invariants []Invariant
+	injectors  []Injector
+	injected   map[string]int
 }
 
 // New builds an engine over a cluster. The cluster must already be
@@ -90,9 +92,10 @@ func New[M any](c Config, cluster Cluster[M], wire Wire[M]) *Engine[M] {
 		cluster: cluster,
 		wire:    wire,
 		rng:     rand.New(rand.NewSource(c.Seed)),
-		drop:    c.DropPermille,
-		delay:   c.MaxDelay,
-		scratch: make([]M, 0, 4096),
+		drop:     c.DropPermille,
+		delay:    c.MaxDelay,
+		scratch:  make([]M, 0, 4096),
+		injected: make(map[string]int),
 	}
 }
 
@@ -182,8 +185,14 @@ func (e *Engine[M]) Collect() {
 			if e.delay > 0 {
 				d = uint64(e.rng.Int63n(int64(e.delay + 1)))
 			}
-			e.seq++
 			from, to := e.wire.Route(m)
+			// Injectors are consulted only after both draws above, so a
+			// registered fault never shifts the seeded schedule.
+			if blocked := e.blockedBy(from, to, d); blocked != "" {
+				e.injected[blocked]++
+				continue
+			}
+			e.seq++
 			e.queue = append(e.queue, event[M]{at: e.Now + d, seq: e.seq, from: from, to: to, msg: m})
 		}
 	}
@@ -208,6 +217,35 @@ func (e *Engine[M]) Isolate(node uint32) int {
 
 // Pending reports how many messages are currently in flight.
 func (e *Engine[M]) Pending() int { return len(e.queue) }
+
+// Inject registers network faults. It is additive, and registering none leaves
+// the engine's behavior bit-identical to a build without this facility.
+func (e *Engine[M]) Inject(injectors ...Injector) {
+	e.injectors = append(e.injectors, injectors...)
+}
+
+// InjectedDrops reports how many messages each registered fault has discarded,
+// keyed by injector name. A fault whose count is zero never fired, which makes
+// any conclusion drawn from that run vacuous; assert on this rather than
+// assuming the fault took effect.
+func (e *Engine[M]) InjectedDrops() map[string]int {
+	out := make(map[string]int, len(e.injected))
+	for name, count := range e.injected {
+		out[name] = count
+	}
+	return out
+}
+
+// blockedBy returns the name of the first injector that denies the message, or
+// the empty string if every injector allows it.
+func (e *Engine[M]) blockedBy(from, to uint32, delay uint64) string {
+	for _, injector := range e.injectors {
+		if !injector.Allow(e.Now, from, to, delay) {
+			return injector.Name()
+		}
+	}
+	return ""
+}
 
 // TraceHash is a running digest over every delivery the engine has performed.
 // Two runs with the same seed, cluster, and caller actions must report the same
