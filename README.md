@@ -123,4 +123,15 @@ isolated netns -> XDP / TC / netem -> controlled kernel faults
 - `verification/tla/`: current formal model;
 - `benchmarks/`: checked-in measurement evidence.
 
+## Using the machinery on your own system
+
+The deterministic simulator, its invariant checking, and its fault injection are
+not specific to Raft. [docs/DEVELOPERS.md](docs/DEVELOPERS.md) covers driving
+your own protocol through the engine, declaring campaigns as scenario files, and
+verifying an alternative storage backend against the device conformance suite.
+
+```bash
+go run ./cmd/hyperion simulate -config examples/leader-partition.json
+```
+
 See [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), and [ROADMAP.md](ROADMAP.md).

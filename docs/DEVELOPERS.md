@@ -1,0 +1,225 @@
+# Building on HYPERION
+
+HYPERION-DST is a reference consensus implementation, but its testing machinery
+is not specific to Raft. This document is for using that machinery on your own
+system.
+
+Three things are pluggable: the protocol under test, the properties it must
+satisfy, and the faults it must survive. A fourth, the durable storage backend,
+comes with a conformance suite rather than an abstraction to implement.
+
+## Driving your own protocol
+
+`dst.Engine` owns virtual time, seeded message scheduling, loss and delay, and a
+reproducible execution trace. It owns no protocol state. You supply two small
+interfaces and keep everything else.
+
+```go
+type Cluster[M any] interface {
+    Nodes() []uint32
+    Tick(node uint32)
+    Deliver(node uint32, msg M)
+    Drain(node uint32, dst []M) []M
+}
+
+type Wire[M any] interface {
+    Route(msg M) (from, to uint32)
+    Digest(msg M) (kind uint8, value uint64)
+}
+```
+
+`M` is your message type. The engine is generic over it, so messages are never
+boxed and the hot path allocates nothing.
+
+A minimal implementation:
+
+```go
+type cluster struct {
+    ids   []uint32
+    nodes map[uint32]*myNode
+}
+
+func (c *cluster) Nodes() []uint32                  { return c.ids }
+func (c *cluster) Tick(id uint32)                   { c.nodes[id].tick() }
+func (c *cluster) Deliver(id uint32, m myMessage)   { c.nodes[id].receive(m) }
+func (c *cluster) Drain(id uint32, dst []myMessage) []myMessage {
+    return c.nodes[id].drainOutbound(dst)
+}
+func (c *cluster) Route(m myMessage) (uint32, uint32) { return m.From, m.To }
+func (c *cluster) Digest(m myMessage) (uint8, uint64) { return m.Kind, m.Term }
+
+engine := dst.New[myMessage](dst.Config{Seed: 1, DropPermille: 50, MaxDelay: 5}, c, c)
+engine.Run(10_000)
+```
+
+`dst/raftcluster` is the worked example: it is what this repository's own Raft
+core looks like behind these interfaces, and it is verified to drive the core
+identically to the simulator that was qualified before the extraction.
+
+### The determinism contract
+
+Every method above must be deterministic. The usual way to break this is
+iterating a Go map: `Nodes()` must return a stable order, and any internal loop
+whose order affects behavior must not come from map iteration.
+
+`TraceHash()` is a running digest over every delivery. Two runs with the same
+seed, the same cluster, and the same caller actions must report the same hash at
+every step. When they diverge, the first differing step localizes the
+nondeterminism.
+
+## Checking properties
+
+An `Invariant` is a named property the engine evaluates after each step.
+
+```go
+type Invariant interface {
+    Name() string
+    Check() error
+}
+```
+
+Register with `Watch`, then drive with `StepChecked` or `RunChecked` instead of
+`Step` and `Run`:
+
+```go
+engine.Watch(dst.InvariantFunc{
+    Label: "one leader per term",
+    Fn:    c.checkElectionSafety,
+})
+if err := engine.RunChecked(10_000); err != nil {
+    var v *dst.Violation
+    errors.As(err, &v)
+    log.Fatalf("%s broke at step %d, trace %s", v.Invariant, v.Step, v.Trace)
+}
+```
+
+A `Violation` carries the property name, the step, and the trace hash, so a
+failure is a coordinate you can return to rather than a message you have to
+reproduce by guesswork.
+
+`Step` and `Run` never evaluate invariants, so adding them to an existing loop
+changes nothing until you opt in.
+
+`raftcluster.SafetyInvariants()` packages the Raft properties — election safety,
+index sanity, committed-prefix agreement — and is a useful shape to copy.
+
+### Make your invariants fail on purpose
+
+An invariant that never fires is indistinguishable from one that is never
+evaluated. Write a mutation test: corrupt exactly the state the property
+protects and require it to report the violation. The three in
+`dst/raftcluster/invariants_test.go` do this.
+
+## Injecting faults
+
+An `Injector` decides whether a message survives.
+
+```go
+engine.Inject(dst.During(200, 700, dst.Split([]uint32{1}, []uint32{2, 3, 4, 5})))
+engine.Inject(dst.Link(1, 2))   // one-way failure
+engine.Inject(dst.Isolate(3))   // unreachable but running
+```
+
+Injectors are consulted *after* the engine draws a message's random loss and
+delay. This is deliberate: the seeded stream is identical with and without a
+fault, so a run with a partition and a run without one on the same seed differ
+only because of the partition. That makes A/B comparison meaningful rather than
+confounded by schedule drift.
+
+`InjectedDrops()` reports how many messages each fault discarded. Assert on it.
+A campaign whose partition dropped nothing proves nothing, and the count is the
+only way to tell that apart from a campaign that survived one.
+
+## Declaring runs as files
+
+A scenario file describes a reproducible run, so a campaign can be reviewed and
+replayed by someone who was not there when it was written.
+
+```json
+{
+  "name": "leader partition and heal",
+  "seed": "0x4A2C",
+  "nodes": 5,
+  "steps": 1200,
+  "dropPermille": 20,
+  "maxDelay": 4,
+  "proposeEvery": 17,
+  "faults": [
+    {"type": "split", "a": [1], "b": [2, 3, 4, 5], "start": 200, "end": 700}
+  ]
+}
+```
+
+```bash
+go run ./cmd/hyperion simulate -config examples/leader-partition.json
+```
+
+```
+scenario="leader partition and heal" seed=0x4A2C nodes=5 steps=1200 leader=2 proposed=70 max_commit=42 trace=0ec8...
+fault="split[1]|[2 3 4 5]@[200,700)" dropped=945
+```
+
+Parsing is strict: an unknown field, an unknown fault type, a node outside the
+cluster, a node on both sides of a split, or a backwards window is an error. A
+scenario that quietly did less than it claimed would produce evidence for a
+campaign that never ran.
+
+The format describes the engine and its faults, not Raft. Another protocol
+reuses `dst/scenario` and supplies its own runner; `internal/cli/simulate.go` is
+about sixty lines and shows what that runner does.
+
+## Plugging in storage
+
+There is no storage abstraction to implement beyond `wal.Device`:
+
+```go
+type Device interface {
+    Append([]byte) error
+    Sync() error
+    DurableBytes() []byte
+    TruncateDurable(int) error
+}
+```
+
+Implement those four and you get the checksummed record format, sequence
+validation, and torn-tail recovery of `wal.Log` on top. The consensus
+persistence boundary above it is `raft.StableStore` and `raft.SnapshotStore`,
+implemented by `storage/raftwal`.
+
+Verify a new backend before trusting it:
+
+```go
+func TestMyDeviceConformance(t *testing.T) {
+    storagetest.RunDeviceSuite(t, func(t *testing.T) wal.Device {
+        return newMyDevice(t)
+    })
+}
+```
+
+The suite covers the properties `wal.Log` relies on, including the two that are
+easy to get wrong: `DurableBytes` must return a copy, and `Append` after
+`TruncateDurable` must continue from the truncated end rather than leaving a
+hole.
+
+Note that `storage.Entry` is not `raft.Entry`. The consensus core keeps entries
+in a slice where position carries the index, so `raft.Entry` has no index field;
+a durable record has no position and must carry one. They are converted at the
+`raftwal` seam.
+
+## What this does not do
+
+- **The engine is single-threaded.** It is not safe for concurrent use.
+  Parallelism belongs between runs, not inside one.
+- **Invariants are safety properties.** No liveness property is checked, and a
+  run that makes no progress violates nothing. If progress matters to you,
+  assert on it explicitly after the run.
+- **Trace hashes are comparable within a process, not across builds.** They are
+  a tool for comparing two runs on one machine, not a recorded fingerprint.
+- **`nextReady` is a linear scan** over in-flight messages, carried over
+  verbatim from the qualified simulator so that delivery order is preserved
+  exactly. Large topologies with high delay bounds pay for it.
+- **Kernel-level fault injection is separate.** `chaos` and `bpf/` drive real
+  XDP/TC programs and keep hard safety guards: a dedicated `hyperion-*`
+  namespace, validated CIDRs, and bounded delay and loss. Those guards are not
+  extension points, and the deterministic `Injector` above has nothing to do
+  with them.

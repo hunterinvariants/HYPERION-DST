@@ -1,0 +1,18 @@
+{
+  "name": "leader partition and heal",
+  "seed": "0x4A2C",
+  "nodes": 5,
+  "steps": 1200,
+  "dropPermille": 20,
+  "maxDelay": 4,
+  "proposeEvery": 17,
+  "faults": [
+    {
+      "type": "split",
+      "a": [1],
+      "b": [2, 3, 4, 5],
+      "start": 200,
+      "end": 700
+    }
+  ]
+}

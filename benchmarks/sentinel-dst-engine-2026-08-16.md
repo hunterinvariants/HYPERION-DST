@@ -2,22 +2,24 @@
 
 Date: 2026-08-16
 
-Commit under test: `dc8212b` on branch `framework/dst-invariants`.
+Commit under test: `01fcc27` on branch `framework/faults-and-scenarios`.
 
 ## Purpose
 
 The `dst` package extracts the deterministic execution engine — virtual time,
-seeded scheduling, message loss and delay, the execution trace, and invariant
-checking — from the Raft-specific simulator in `sim`, so that protocols other
-than Raft can be driven and checked under the same conditions.
-`dst/raftcluster` re-implements the Raft wiring behind the engine's `Cluster`
-and `Wire` interfaces and packages the Raft safety properties as reusable
-invariants.
+seeded scheduling, message loss and delay, the execution trace, invariant
+checking, and programmable fault injection — from the Raft-specific simulator
+in `sim`, so that protocols other than Raft can be driven and checked under the
+same conditions. `dst/raftcluster` re-implements the Raft wiring behind the
+engine's `Cluster` and `Wire` interfaces and packages the Raft safety
+properties as reusable invariants. `dst/scenario` makes a run declarable as a
+file.
 
-The change is additive. Outside `dst/`, only `.gitignore` is touched, so every
-previously qualified binary and code path is unchanged. This report records the
-gate run that establishes the package is behaviorally identical to the frozen
-simulator on the qualification host.
+The change is additive with respect to the qualified system: `sim`, `raft`,
+`storage/wal`, `storage/raftwal`, `storage/uring`, `protocol`, and `server`
+carry no logic changes, so every previously qualified code path is unchanged.
+This report records the gate run that establishes the package is behaviorally
+identical to the frozen simulator on the qualification host.
 
 ## Host
 
@@ -31,16 +33,21 @@ results. It does bear on any future re-run of the hardware gates.
 
 ## Executable qualification
 
-- `go vet ./...`: pass;
+- `go vet ./...` on `windows/amd64`, `linux/amd64`, `linux/arm64`, and
+  `darwin/arm64`: pass;
 - complete Go race suite `go test ./... -race -count=1`: pass;
 - engine/simulator equivalence, 7,000 paired runs under `-race`: pass;
 - equivalence negative control: pass;
 - packaged Raft invariants under loss, delay, proposal, and restart, 1,000
-  seeds x 500 ticks: pass;
-- invariant mutation tests: pass.
+  seeds x 500 ticks: pass, 54.33 s;
+- invariant mutation tests: pass;
+- leader partition and heal, 1,000 seeds: pass, 19.46 s;
+- asymmetric one-way link failure, 1,000 seeds: pass, 41.18 s;
+- `wal.Device` conformance suite against `MemoryDevice` and `FileDevice`: pass;
+- a declared scenario executed through `hyperion simulate`: pass.
 
 The deterministic seed sweep is not repeated here. It exercises `sim`, and
-`git diff origin/main..dc8212b` shows `sim` unmodified on this branch; its last
+`git diff origin/main..01fcc27` shows `sim` unmodified on this branch; its last
 recorded result is `PASS seeds=1000 range=1..1000 steps=1000` at `036a3ef`.
 
 ## Equivalence method
@@ -60,21 +67,102 @@ Seven campaigns ran 1,000 seeds each, for 7,000 paired runs.
 
 | Campaign | Nodes | Steps | Drop | Max delay | Restart | Time |
 |---|---:|---:|---:|---:|---|---:|
-| quiet | 3 | 400 | 0 | 0 | - | 14.27 s |
-| lossy | 5 | 500 | 75 permille | 5 | - | 31.07 s |
-| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 45.65 s |
-| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 44.63 s |
-| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 156.90 s |
-| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 79.10 s |
-| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 45.75 s |
+| quiet | 3 | 400 | 0 | 0 | - | 13.62 s |
+| lossy | 5 | 500 | 75 permille | 5 | - | 32.11 s |
+| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 45.79 s |
+| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 47.09 s |
+| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 158.74 s |
+| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 78.64 s |
+| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 41.20 s |
 
 The compaction and membership campaigns mirror the shapes of the qualified
 campaigns in `sim/compaction_test.go` and `sim/membership_test.go`.
 
-Adding the invariant facility required modifying `dst/engine.go`. `Step` and
-`Run` are unchanged, and a test pins that registering invariants leaves the
-trace hash identical, but the equivalence campaigns above were re-run in full
-at this commit rather than carried over.
+Both the invariant facility and the fault facility required modifying
+`dst/engine.go`. `Step` and `Run` are unchanged, and tests pin that registering
+invariants or an always-allowing injector leaves the trace hash identical, but
+the equivalence campaigns above were re-run in full at this commit rather than
+carried over. The `dst/raftcluster` package total for the run was 533.20 s
+under the race detector.
+
+## Fault injection
+
+`dst.Injector` programs a deterministic network fault. The engine consults
+injectors after it has drawn a message's random loss and delay, so the seeded
+stream is identical with and without a fault: a run with a partition and a run
+without one on the same seed differ only because of the partition, not because
+the schedule drifted. Registering no injector leaves behavior bit-identical,
+which the equivalence campaigns above re-confirm.
+
+Two campaigns exercise it against Raft, 1,000 seeds each:
+
+- **leader partition and heal.** The elected leader is cut off from the other
+  four for a bounded window. The majority must elect a replacement in a
+  strictly later term than the isolated leader held, the isolated node must not
+  advance its commit index while it holds a minority, and after the window
+  closes it must adopt the later term and stop claiming leadership. Safety
+  invariants are checked at every step throughout. Pass, 19.46 s.
+- **asymmetric link failure.** Node 1 can hear node 2, but node 2 never hears
+  node 1 — the failure a symmetric partition model cannot express. Safety
+  invariants hold across 600 ticks with periodic proposals. Pass, 41.18 s.
+
+Both campaigns fail if their fault dropped no message, so neither can pass
+vacuously.
+
+## Declared scenarios
+
+`dst/scenario` parses a run description: seed, cluster size, steps, network
+conditions, proposal and restart cadence, and faults with optional time
+windows. Parsing is strict — an unknown field, an unknown fault type, a node
+outside the cluster, a node on both sides of a split, or a backwards window is
+an error, because a scenario that quietly did less than it claimed would
+produce evidence for a campaign that never ran. Fourteen rejection cases are
+covered by test.
+
+`examples/leader-partition.json` executed on this host:
+
+```
+scenario="leader partition and heal" seed=0x4A2C nodes=5 steps=1200 leader=2
+proposed=70 max_commit=42 trace=0ec85bc87c9895d2432ac5954c149f47d2a1f1fed20d44a42483f12fcac6f0a4
+fault="split[1]|[2 3 4 5]@[200,700)" dropped=945
+```
+
+Node 1 was partitioned away and node 2 carried the cluster. The run reports the
+drop count per fault so that a campaign whose fault never fired is visible
+rather than assumed.
+
+### An observation about cross-platform traces
+
+This report has said in every revision that the equivalence establishes nothing
+about cross-platform trace stability. That statement remains accurate about
+what the equivalence proves. It is worth recording, though, that the scenario
+above produced a bit-identical trace hash, leader, proposal count, commit index,
+and drop count on `windows/amd64` and on `linux/amd64`.
+
+This is one matching pair, not a claim of portability. It is consistent with
+`math/rand` being specified as reproducible for a fixed seed and with the rest
+of the engine being deterministic. If it holds more broadly, a scenario file
+paired with an expected trace hash becomes a portable regression fixture; that
+is not yet implemented and is not claimed here.
+
+## Storage backend conformance
+
+`storage/storagetest.RunDeviceSuite` checks the ten properties `wal.Log`
+requires of a `wal.Device`, so an alternative backend can be verified before it
+is trusted with consensus state. `MemoryDevice` and `FileDevice` both pass.
+
+Writing the suite surfaced an underspecified contract. `FileDevice.DurableBytes`
+calls `Sync` before reading, so for it every appended byte is reported;
+`MemoryDevice.DurableBytes` reports only what `Sync` already made durable,
+because modelling crash loss is its purpose. This is not a live defect: `wal.Log`
+calls the method once, in `Open`, when nothing is pending, and there the two
+readings agree. It was a defect in the interface, which said nothing about which
+behavior an implementer owed. The contract is now stated on the interface.
+
+The dead `storage.StableStore` interface, which nothing implemented and nothing
+called, was removed. `storage.Entry` remains and is documented as deliberately
+distinct from `raft.Entry`: a durable record has no position and must carry its
+index, while the consensus core derives the index from the slice position.
 
 ## Invariants
 
@@ -116,13 +204,18 @@ evaluated. Each of these has a guard, and none of them fired:
 - Three mutation tests corrupt exactly the state each invariant protects — two
   leaders in one term, a commit index beyond the log, and a divergent committed
   entry — and require the matching property to report the violation.
+- Both fault campaigns fail if their injector dropped no message, and the
+  partition campaign additionally fails if the majority elected no replacement.
+  A fault that silently matched nothing would otherwise let a run report
+  success for a scenario that never happened.
 
 ## Claim boundary
 
 The equivalence is a **relative** comparison between two implementations
 executing on the same host in the same process. It is not a comparison against
 a recorded reference hash, and it therefore establishes nothing about
-cross-platform or cross-version trace stability.
+cross-platform or cross-version trace stability. The single cross-platform
+match noted above is an observation, not a claim.
 
 Equivalence is established for the transitions the campaigns exercise:
 election, pre-vote, replication, commit, message loss, message delay,
@@ -141,7 +234,18 @@ paths. They are exercised by the package-level tests in `raft`, which are
 unchanged and unaffected by this work.
 
 The invariants are safety properties only. No liveness property is checked, and
-a run that makes no progress violates nothing.
+a run that makes no progress violates nothing. The partition campaign asserts
+progress explicitly, by requiring a replacement leader, precisely because the
+invariants would not have noticed its absence.
+
+The fault facility is deterministic and in-process. It shares no code and no
+guarantees with the kernel-level injection in `chaos` and `bpf/`, whose safety
+guards — a dedicated `hyperion-*` namespace, validated CIDRs, bounded delay and
+loss — are unchanged and are not extension points.
+
+The device conformance suite states the properties `wal.Log` relies on. Passing
+it does not establish that a backend is durable on real hardware; that remains
+the subject of the io_uring and NVMe gates.
 
 The race suite result shows that the engine starts no concurrency of its own.
 It does not show that the engine is safe under concurrent use; `dst.Engine` is
@@ -163,8 +267,9 @@ campaigns in this report are the gate that would prove such a change safe.
 
 Raw gate output on the qualification host:
 
-- `benchmarks/artifacts/dst-invariants-race.txt`;
-- `benchmarks/artifacts/dst-invariants-equivalence.txt`;
+- `benchmarks/artifacts/faults-race.txt`;
+- `benchmarks/artifacts/faults-equivalence.txt`;
+- `benchmarks/artifacts/faults-scenario.txt`;
 - `benchmarks/artifacts/dst-engine-036a3ef-seeds.txt` (seed sweep, `sim`
   unmodified since).
 
@@ -173,9 +278,10 @@ them, the raw files stay on the qualification host.
 
 ## Relationship to the qualified baseline
 
-`main` carries the engine as of `3397835`, which builds on the qualified
-reference baseline `8148e35`. This report covers branch work and does not amend
-the frozen evidence index: `EVIDENCE.md`, `STATUS.md`, and `ROADMAP.md`
-continue to describe the six completed roadmap phases and are deliberately
-unchanged. The `dst` package is not part of any roadmap phase and claims no
-phase acceptance.
+`main` carries the framework work as of `3e2d7e3`, which builds on the
+qualified reference baseline `8148e35`. This report covers branch work and does
+not amend the frozen evidence index: `EVIDENCE.md`, `STATUS.md`, and
+`ROADMAP.md` continue to describe the six completed roadmap phases and are
+deliberately unchanged. The `dst` package, the scenario format, the command
+extraction, and the device conformance suite are not part of any roadmap phase
+and claim no phase acceptance.

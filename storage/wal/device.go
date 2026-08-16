@@ -7,11 +7,30 @@ import (
 
 var ErrInvalidTear = errors.New("wal: invalid torn-write length")
 
-// Device is the minimum append-and-sync surface needed by Log.
+// Device is the durable byte surface Log is built on. It is the plug point for
+// an alternative storage backend: implement these four methods and Log's
+// checksummed records, sequence validation, and torn-tail recovery come with
+// it. Verify a new implementation with storagetest.RunDeviceSuite before
+// trusting it with consensus state.
 type Device interface {
+	// Append adds bytes to the end of the log. It need not make them durable.
 	Append([]byte) error
+	// Sync is the durability boundary: after it returns nil, everything
+	// appended so far must survive a crash.
 	Sync() error
+	// DurableBytes returns a copy of the bytes that would survive a crash.
+	//
+	// Implementations are not required to be side-effect free here: FileDevice
+	// syncs before reading, so for it every appended byte is reported. A device
+	// that models crash behavior, such as MemoryDevice, must instead report
+	// only what Sync has already made durable, since that difference is the
+	// whole point of the simulation. Log calls this once, in Open, when nothing
+	// is pending, so the two readings agree there.
 	DurableBytes() []byte
+	// TruncateDurable shortens durable state to size, which is how a torn tail
+	// is discarded. It must reject a negative size or one past the current end
+	// with ErrInvalidTear and leave the device unchanged. A subsequent Append
+	// must continue from the truncated end, not from the previous one.
 	TruncateDurable(int) error
 }
 
