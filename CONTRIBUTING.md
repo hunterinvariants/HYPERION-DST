@@ -91,6 +91,17 @@ reviewer sees the change:
 go test ./internal/apisurface -update
 ```
 
+## Licensing of contributions
+
+The project is under the Apache License 2.0. Section 5 of that license already
+governs what you send: unless you say otherwise in writing, a contribution you
+submit for inclusion is licensed under the same terms. There is no separate
+agreement to sign.
+
+Do not paste in code you did not write, or code under an incompatible license.
+If a change is derived from another project, say so in the pull request with a
+link, so the provenance is recorded rather than reconstructed later.
+
 ## Conventions
 
 - Commit subjects are one line, imperative, no body, no trailers.

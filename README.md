@@ -195,6 +195,15 @@ The six scoped qualification phases are complete and frozen at the documented
 reference baseline. Framework work claims no phase acceptance and does not amend
 that record.
 
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). It covers the project, including
+earlier releases.
+
+Apache rather than MIT for the express patent grant and its retaliation clause,
+which matter more for a project touching `io_uring`, eBPF, and consensus than
+copyleft would.
+
 ## Renamed from HYPERION-DST
 
 The project was `HYPERION-DST` through `v0.1.1`, when deterministic simulation
