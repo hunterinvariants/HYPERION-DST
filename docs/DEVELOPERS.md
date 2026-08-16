@@ -215,9 +215,11 @@ a durable record has no position and must carry one. They are converted at the
   assert on it explicitly after the run.
 - **Trace hashes are comparable within a process, not across builds.** They are
   a tool for comparing two runs on one machine, not a recorded fingerprint.
-- **`nextReady` is a linear scan** over in-flight messages, carried over
-  verbatim from the qualified simulator so that delivery order is preserved
-  exactly. Large topologies with high delay bounds pay for it.
+- **The in-flight queue is a binary heap** on `(at, seq)`. Delivery order is
+  identical to the linear scan the qualified simulator still uses, which is
+  what the equivalence campaigns check. Below roughly ten nodes at a small
+  delay bound the two cost the same; the heap matters at wide topologies with
+  high delay bounds, where the scan is seven times slower.
 - **Kernel-level fault injection is separate.** `chaos` and `bpf/` drive real
   XDP/TC programs and keep hard safety guards: a dedicated `hyperion-*`
   namespace, validated CIDRs, and bounded delay and loss. Those guards are not

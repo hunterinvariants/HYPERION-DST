@@ -108,13 +108,11 @@ func (e *Engine[M]) Step() {
 		e.cluster.Tick(id)
 	}
 	e.Collect()
-	for {
-		idx := e.nextReady()
-		if idx < 0 {
-			break
-		}
-		ev := e.queue[idx]
-		e.queue = append(e.queue[:idx], e.queue[idx+1:]...)
+	// The queue is a min-heap on (at, seq). Any message that is due is at the
+	// root, because the root is the global minimum and a due message can only
+	// be smaller than one that is not.
+	for len(e.queue) > 0 && e.queue[0].at <= e.Now {
+		ev := e.pop()
 		e.record(ev)
 		e.cluster.Deliver(ev.to, ev.msg)
 		e.Collect()
@@ -193,7 +191,7 @@ func (e *Engine[M]) Collect() {
 				continue
 			}
 			e.seq++
-			e.queue = append(e.queue, event[M]{at: e.Now + d, seq: e.seq, from: from, to: to, msg: m})
+			e.push(event[M]{at: e.Now + d, seq: e.seq, from: from, to: to, msg: m})
 		}
 	}
 }
@@ -212,6 +210,10 @@ func (e *Engine[M]) Isolate(node uint32) int {
 		kept = append(kept, ev)
 	}
 	e.queue = kept
+	// Removing arbitrary elements breaks the heap property, so rebuild.
+	for i := len(e.queue)/2 - 1; i >= 0; i-- {
+		e.siftDown(i)
+	}
 	return dropped
 }
 
@@ -253,18 +255,53 @@ func (e *Engine[M]) blockedBy(from, to uint32, delay uint64) string {
 // the hashes first differ.
 func (e *Engine[M]) TraceHash() string { return fmt.Sprintf("%x", e.trace) }
 
-func (e *Engine[M]) nextReady() int {
-	best := -1
-	for i := range e.queue {
-		if e.queue[i].at > e.Now {
-			continue
+// earlier is the schedule's total order: due time first, then the sequence
+// number in which the message was collected. Because it is total, a heap
+// ordered by it delivers messages in exactly the order a linear scan for the
+// smallest due message would.
+func earlier[M any](a, b event[M]) bool {
+	return a.at < b.at || (a.at == b.at && a.seq < b.seq)
+}
+
+func (e *Engine[M]) push(ev event[M]) {
+	e.queue = append(e.queue, ev)
+	for i := len(e.queue) - 1; i > 0; {
+		parent := (i - 1) / 2
+		if !earlier(e.queue[i], e.queue[parent]) {
+			break
 		}
-		if best < 0 || e.queue[i].at < e.queue[best].at ||
-			(e.queue[i].at == e.queue[best].at && e.queue[i].seq < e.queue[best].seq) {
-			best = i
-		}
+		e.queue[i], e.queue[parent] = e.queue[parent], e.queue[i]
+		i = parent
 	}
-	return best
+}
+
+func (e *Engine[M]) pop() event[M] {
+	top := e.queue[0]
+	last := len(e.queue) - 1
+	e.queue[0] = e.queue[last]
+	var zero event[M]
+	e.queue[last] = zero // release the message for collection
+	e.queue = e.queue[:last]
+	e.siftDown(0)
+	return top
+}
+
+func (e *Engine[M]) siftDown(i int) {
+	n := len(e.queue)
+	for {
+		left, smallest := 2*i+1, i
+		if left < n && earlier(e.queue[left], e.queue[smallest]) {
+			smallest = left
+		}
+		if right := left + 1; right < n && earlier(e.queue[right], e.queue[smallest]) {
+			smallest = right
+		}
+		if smallest == i {
+			return
+		}
+		e.queue[i], e.queue[smallest] = e.queue[smallest], e.queue[i]
+		i = smallest
+	}
 }
 
 func (e *Engine[M]) record(ev event[M]) {

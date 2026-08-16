@@ -2,7 +2,7 @@
 
 Date: 2026-08-16
 
-Commit under test: `01fcc27` on branch `framework/faults-and-scenarios`.
+Commit under test: the `framework/scheduler-heap` branch head.
 
 ## Purpose
 
@@ -39,15 +39,15 @@ results. It does bear on any future re-run of the hardware gates.
 - engine/simulator equivalence, 7,000 paired runs under `-race`: pass;
 - equivalence negative control: pass;
 - packaged Raft invariants under loss, delay, proposal, and restart, 1,000
-  seeds x 500 ticks: pass, 54.33 s;
+  seeds x 500 ticks: pass, 57.18 s;
 - invariant mutation tests: pass;
-- leader partition and heal, 1,000 seeds: pass, 19.46 s;
-- asymmetric one-way link failure, 1,000 seeds: pass, 41.18 s;
+- leader partition and heal, 1,000 seeds: pass, 19.86 s;
+- asymmetric one-way link failure, 1,000 seeds: pass, 40.66 s;
 - `wal.Device` conformance suite against `MemoryDevice` and `FileDevice`: pass;
 - a declared scenario executed through `hyperion simulate`: pass.
 
 The deterministic seed sweep is not repeated here. It exercises `sim`, and
-`git diff origin/main..01fcc27` shows `sim` unmodified on this branch; its last
+`git diff origin/main..HEAD` shows `sim` unmodified on this branch; its last
 recorded result is `PASS seeds=1000 range=1..1000 steps=1000` at `036a3ef`.
 
 ## Equivalence method
@@ -67,13 +67,13 @@ Seven campaigns ran 1,000 seeds each, for 7,000 paired runs.
 
 | Campaign | Nodes | Steps | Drop | Max delay | Restart | Time |
 |---|---:|---:|---:|---:|---|---:|
-| quiet | 3 | 400 | 0 | 0 | - | 13.62 s |
-| lossy | 5 | 500 | 75 permille | 5 | - | 32.11 s |
-| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 45.79 s |
-| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 47.09 s |
-| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 158.74 s |
-| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 78.64 s |
-| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 41.20 s |
+| quiet | 3 | 400 | 0 | 0 | - | 15.04 s |
+| lossy | 5 | 500 | 75 permille | 5 | - | 31.11 s |
+| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 48.42 s |
+| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 44.25 s |
+| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 167.54 s |
+| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 102.14 s |
+| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 46.27 s |
 
 The compaction and membership campaigns mirror the shapes of the qualified
 campaigns in `sim/compaction_test.go` and `sim/membership_test.go`.
@@ -82,7 +82,7 @@ Both the invariant facility and the fault facility required modifying
 `dst/engine.go`. `Step` and `Run` are unchanged, and tests pin that registering
 invariants or an always-allowing injector leaves the trace hash identical, but
 the equivalence campaigns above were re-run in full at this commit rather than
-carried over. The `dst/raftcluster` package total for the run was 533.20 s
+carried over. The `dst/raftcluster` package total for the run was 573.51 s
 under the race detector.
 
 ## Fault injection
@@ -101,10 +101,10 @@ Two campaigns exercise it against Raft, 1,000 seeds each:
   strictly later term than the isolated leader held, the isolated node must not
   advance its commit index while it holds a minority, and after the window
   closes it must adopt the later term and stop claiming leadership. Safety
-  invariants are checked at every step throughout. Pass, 19.46 s.
+  invariants are checked at every step throughout. Pass, 19.86 s.
 - **asymmetric link failure.** Node 1 can hear node 2, but node 2 never hears
   node 1 — the failure a symmetric partition model cannot express. Safety
-  invariants hold across 600 ticks with periodic proposals. Pass, 41.18 s.
+  invariants hold across 600 ticks with periodic proposals. Pass, 40.66 s.
 
 Both campaigns fail if their fault dropped no message, so neither can pass
 vacuously.
@@ -251,24 +251,56 @@ The race suite result shows that the engine starts no concurrency of its own.
 It does not show that the engine is safe under concurrent use; `dst.Engine` is
 documented as single-threaded and is not safe for concurrent use.
 
-## Known performance characteristic
+## Scheduling cost
 
-`dst.Engine.nextReady` is a linear scan over the in-flight queue, carried over
-verbatim from `sim` so that delivery order is preserved exactly. The
-`delay-only` campaign is the visible cost: seven nodes at a delay bound of nine
-hold enough messages in flight to dominate the run time.
+The engine's in-flight queue is a binary heap keyed on `(at, seq)`. It replaced
+the linear scan carried over from `sim`, which is retained there and therefore
+still acts as the reference the equivalence campaigns compare against: if the
+heap changed delivery order anywhere, the paired trace hashes would diverge.
+The key is a total order and the element the scan selected is the global
+minimum whenever any message is due, so the orders coincide by construction as
+well as by measurement.
 
-A binary heap keyed on `(at, seq)` would remove the scan without changing
-delivery order, because that key is a total order and the element the scan
-selects is the global minimum whenever any message is due. The equivalence
-campaigns in this report are the gate that would prove such a change safe.
+Measured on this host by building both revisions from a `git worktree` and
+running the same benchmarks against each. The small topologies are reported as
+medians of ten samples at automatically scaled iteration counts, roughly three
+thousand runs per sample; the large ones as medians of five single-run samples,
+which is adequate only because the effect there is large.
+
+| Topology | Linear scan | Heap | |
+|---|---:|---:|---|
+| 5 nodes, delay 0 | 351 us | 340 us | -3% |
+| 5 nodes, delay 5 | 375 us | 387 us | +3% |
+| 16 nodes, delay 32 | 7.44 ms | 5.70 ms | 1.3x faster |
+| 32 nodes, delay 128 | 55.1 ms | 11.8 ms | 4.7x faster |
+
+At the topologies the campaigns use the two are indistinguishable; the value is
+the removal of an `O(queue)` cost per delivery that reaches a factor of nearly
+five at thirty-two nodes with a delay bound of 128. That is the regime a
+framework user testing a wide topology reaches, not the regime these campaigns
+use.
+
+Two statements from earlier revisions of this report are withdrawn. The first
+claimed the linear scan dominated the `delay-only` campaign; it does not, and
+the campaign is unchanged by this work. The second, made from a five-sample
+run at one iteration each, reported a 29 percent regression at five nodes with
+a delay bound of five; at proper iteration counts that difference is three
+percent with overlapping ranges, and it was an artifact of the measurement
+rather than a property of the code.
+
+The 1,000-seed campaign timings in this run are up to 30 percent higher than
+the previous revision's, including for campaigns whose topology the scheduler
+change cannot affect. That is host variance. The benchmark comparison above is
+the controlled measurement and the only one this report draws a conclusion
+from.
 
 ## Artifacts
 
 Raw gate output on the qualification host:
 
-- `benchmarks/artifacts/faults-race.txt`;
-- `benchmarks/artifacts/faults-equivalence.txt`;
+- `benchmarks/artifacts/heap-equivalence.txt`;
+- `benchmarks/artifacts/heap-bench.txt` and `heap-bench-baseline.txt`;
+- `benchmarks/artifacts/heap-bench-v2.txt` and `heap-bench-baseline-v2.txt`;
 - `benchmarks/artifacts/faults-scenario.txt`;
 - `benchmarks/artifacts/dst-engine-036a3ef-seeds.txt` (seed sweep, `sim`
   unmodified since).
@@ -278,7 +310,7 @@ them, the raw files stay on the qualification host.
 
 ## Relationship to the qualified baseline
 
-`main` carries the framework work as of `3e2d7e3`, which builds on the
+`main` carries the framework work as of `db2c8b3`, which builds on the
 qualified reference baseline `8148e35`. This report covers branch work and does
 not amend the frozen evidence index: `EVIDENCE.md`, `STATUS.md`, and
 `ROADMAP.md` continue to describe the six completed roadmap phases and are
