@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/storage"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 func durableLog(t *testing.T, config Config) *Device {

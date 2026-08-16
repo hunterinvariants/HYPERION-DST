@@ -7,7 +7,7 @@ import (
 	"hash/crc32"
 	"sort"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/hyperion/raft"
 )
 
 var (

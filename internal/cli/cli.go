@@ -1,4 +1,4 @@
-// Package cli holds one implementation per HYPERION command.
+// Package cli holds one implementation per Hyperion command.
 //
 // Each command exists once here and is reachable two ways: through its
 // historical standalone binary under cmd/, and as a subcommand of the hyperion

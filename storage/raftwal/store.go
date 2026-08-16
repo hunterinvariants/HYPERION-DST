@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 // Index zero is reserved for hard-state records. Command stores VotedFor.

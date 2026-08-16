@@ -112,7 +112,7 @@ records a Sigstore build attestation with the workflow's own OIDC identity —
 there is no signing key to store or leak.
 
 ```bash
-gh attestation verify hyperion-v0.1.0-linux-amd64 --repo hunterinvariants/HYPERION-DST
+gh attestation verify hyperion-v0.1.0-linux-amd64 --repo hunterinvariants/hyperion
 sha256sum -c SHA256SUMS
 ```
 

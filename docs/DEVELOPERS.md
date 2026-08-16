@@ -1,6 +1,6 @@
-# Building on HYPERION
+# Building on Hyperion
 
-HYPERION-DST is a reference consensus implementation, but its testing machinery
+Hyperion is a reference consensus implementation, but its testing machinery
 is not specific to Raft. This document is for using that machinery on your own
 system.
 

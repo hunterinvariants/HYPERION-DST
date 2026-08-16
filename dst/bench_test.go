@@ -3,7 +3,7 @@ package dst_test
 import (
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
+	"github.com/hunterinvariants/hyperion/dst"
 )
 
 // The scheduling cost is dominated by how many messages are in flight at once,

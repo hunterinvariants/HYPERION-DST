@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/protocol"
+	"github.com/hunterinvariants/hyperion/protocol"
 )
 
 func TestThreeProcessClusterReplicatesAndSurvivesLeaderShutdown(t *testing.T) {

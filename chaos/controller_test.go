@@ -26,7 +26,7 @@ func TestRejectsHostInterfaceNames(t *testing.T) {
 		PeerVeth: "hyperion-peer", BPFObject: "chaos.o",
 	}, &fakeRunner{})
 	if err == nil {
-		t.Fatal("accepted non-HYPERION host interface")
+		t.Fatal("accepted non-Hyperion host interface")
 	}
 }
 

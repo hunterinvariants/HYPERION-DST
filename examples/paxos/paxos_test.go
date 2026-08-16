@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
-	"github.com/hunterinvariants/HYPERION-DST/dst/scenario"
+	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/hyperion/dst/scenario"
 )
 
 func newEngine(t *testing.T, nodes int, config dst.Config) (*Cluster, *dst.Engine[Message]) {

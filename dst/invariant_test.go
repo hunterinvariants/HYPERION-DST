@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
+	"github.com/hunterinvariants/hyperion/dst"
 )
 
 var errTooManyTicks = errors.New("too many ticks")

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/storage"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 func TestWALReopenThroughIOUring(t *testing.T) {

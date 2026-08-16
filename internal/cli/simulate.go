@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
-	"github.com/hunterinvariants/HYPERION-DST/dst/raftcluster"
-	"github.com/hunterinvariants/HYPERION-DST/dst/scenario"
-	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/hyperion/dst/raftcluster"
+	"github.com/hunterinvariants/hyperion/dst/scenario"
+	"github.com/hunterinvariants/hyperion/raft"
 )
 
 func simulateCommand() Command {

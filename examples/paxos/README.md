@@ -1,4 +1,4 @@
-# Single-decree Paxos on the HYPERION engine
+# Single-decree Paxos on the Hyperion engine
 
 A complete, self-contained example of driving a protocol that is **not Raft**
 through `dst`. Roughly 250 lines of protocol and 60 lines of wiring.

@@ -3,7 +3,7 @@ package paxos
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
+	"github.com/hunterinvariants/hyperion/dst"
 )
 
 // SafetyInvariants returns the properties the engine checks after every step.

@@ -3,7 +3,7 @@ package sim
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/hyperion/raft"
 )
 
 // CheckSafety validates invariants that must hold at every simulator step.

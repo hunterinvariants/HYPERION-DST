@@ -1,6 +1,6 @@
 package paxos
 
-import "github.com/hunterinvariants/HYPERION-DST/dst"
+import "github.com/hunterinvariants/hyperion/dst"
 
 // Cluster wires Paxos to the engine. It is the whole adapter: four methods for
 // dst.Cluster and two for dst.Wire. Everything else in this package is the

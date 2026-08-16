@@ -10,7 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hunterinvariants/HYPERION-DST/sim"
+	"github.com/hunterinvariants/hyperion/sim"
 )
 
 func simCommand() Command {

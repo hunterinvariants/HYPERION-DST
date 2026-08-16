@@ -1,4 +1,4 @@
-// Command hyperion is the umbrella entry point for every HYPERION command.
+// Command hyperion is the umbrella entry point for every Hyperion command.
 //
 // Each subcommand is the same implementation the historical standalone binary
 // runs, so "hyperion seeds -from 1 -to 1000" and "hyperion-seeds -from 1 -to
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hunterinvariants/HYPERION-DST/internal/cli"
+	"github.com/hunterinvariants/hyperion/internal/cli"
 )
 
 func main() {

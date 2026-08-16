@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage"
+	"github.com/hunterinvariants/hyperion/storage"
 )
 
 // failingDevice models kernel failures at the durability boundary. It keeps

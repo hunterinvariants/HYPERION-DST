@@ -22,7 +22,7 @@ clang --version | head -n 1
 bpftool version
 tc -V
 
-echo "== HYPERION =="
+echo "== Hyperion =="
 git rev-parse --short HEAD
 go test ./... -count=1
 go run ./cmd/hyperion-probe

@@ -1,4 +1,4 @@
-// Package raftcluster adapts the HYPERION Raft core to the dst engine.
+// Package raftcluster adapts the Hyperion Raft core to the dst engine.
 //
 // It is the reference implementation of dst.Cluster and dst.Wire: a protocol
 // that wants deterministic testing supplies its own equivalent of this file
@@ -8,9 +8,9 @@ package raftcluster
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage/raftwal"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage/raftwal"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 // Cluster holds one Raft node per identifier, each backed by its own

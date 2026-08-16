@@ -1,6 +1,6 @@
 # Operating envelope
 
-HYPERION-DST is qualified only within the following recorded envelope.
+Hyperion is qualified only within the following recorded envelope.
 
 - Linux amd64 with kernel 6.8 or newer and available `io_uring`.
 - Files or dedicated block devices must support aligned 4096-byte `O_DIRECT`.

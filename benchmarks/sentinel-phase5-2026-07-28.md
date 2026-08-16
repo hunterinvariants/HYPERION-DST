@@ -32,7 +32,7 @@ non-valid Knossos result prevents the final PASS marker.
 Jepsen stored the authoritative result at:
 
 ```text
-/opt/hyperion/HYPERION-DST/jepsen/store/hyperion-live-linearizability/20260728T041413.407+0200/results.edn
+/opt/hyperion/Hyperion/jepsen/store/hyperion-live-linearizability/20260728T041413.407+0200/results.edn
 ```
 
 The reported checker result was:

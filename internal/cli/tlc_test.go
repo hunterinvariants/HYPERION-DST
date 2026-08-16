@@ -10,7 +10,7 @@ import (
 // benchmarks/sentinel-phase6-2026-07-28.md.
 const successOutput = `TLC2 Version 2.19 of Day Month 20?? (rev: 6e14a8d)
 Running breadth-first search Model-Checking with fp 44 and seed ...
-Parsing file /opt/hyperion/HYPERION-DST/verification/tla/HyperionRaft.tla
+Parsing file /opt/hyperion/Hyperion/verification/tla/HyperionRaft.tla
 Starting... (2026-07-28 04:53:54)
 Computing initial states...
 Finished computing initial states: 1 distinct state generated at 2026-07-28 04:53:56.

@@ -1,8 +1,8 @@
 package raftcluster
 
 import (
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage/raftwal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage/raftwal"
 )
 
 // stableStore keeps simulated snapshots in deterministic memory while the WAL

@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage/uring"
+	"github.com/hunterinvariants/hyperion/storage/uring"
 )
 
 const blockSize = uring.DefaultAlignment
@@ -77,7 +77,7 @@ func runRawBench(args []string) int {
 	defer writer.Close()
 
 	payload := make([]byte, 48)
-	copy(payload, "HYPERION-RAW-BENCH")
+	copy(payload, "Hyperion-RAW-BENCH")
 	latencies := make([]time.Duration, 0, *operations)
 	started := time.Now()
 	for operation := 0; operation < *operations; operation++ {

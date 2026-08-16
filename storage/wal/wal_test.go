@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage"
+	"github.com/hunterinvariants/hyperion/storage"
 )
 
 func TestCrashReplayStateEquivalence(t *testing.T) {

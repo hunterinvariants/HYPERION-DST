@@ -1,4 +1,4 @@
-# HYPERION-DST safety specification
+# Hyperion safety specification
 
 ## Model
 
