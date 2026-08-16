@@ -1,0 +1,90 @@
+name: release
+
+# Fires on a version tag. Nothing is published unless the tagged commit passes
+# its own gates first: a release that skipped them would be exactly the kind of
+# unbacked claim this repository exists to avoid.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go vet ./...
+      - run: go test ./... -race -count=1
+      - run: go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # Only the umbrella binary ships. It reaches every command, and the
+      # standalone binaries exist for the recorded gate scripts, which build
+      # from source anyway. Commands needing kernel facilities a target cannot
+      # reach are simply absent from that build's command list.
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME}"
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            name="hyperion-${version}-${os}-${arch}"
+            binary="dist/${name}"
+            if [ "$os" = "windows" ]; then binary="${binary}.exe"; fi
+            GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags "-s -w" -o "$binary" ./cmd/hyperion
+          done
+          ls -l dist
+
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      # The only third-party action in this repository. The module has no Go
+      # dependencies, so the SBOM is close to trivial, but a consumer should
+      # not have to take that on trust.
+      - name: Software bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/hyperion-${{ github.ref_name }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      # First-party Sigstore attestation. It signs with the workflow's OIDC
+      # identity, so there is no key to store, lose, or leak.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/hyperion-*
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "Binaries are the hyperion umbrella command. Verify with SHA256SUMS, and with \`gh attestation verify\` against this repository. See docs/API.md for what is contractual at this version."

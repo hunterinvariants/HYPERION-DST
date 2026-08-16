@@ -29,6 +29,7 @@ func Commands() []Command {
 	all := []Command{
 		backupCommand(),
 		ctlCommand(),
+		newCommand(),
 		probeCommand(),
 		seedsCommand(),
 		serveCommand(),
