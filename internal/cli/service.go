@@ -27,6 +27,7 @@ func runServe(args []string) int {
 	flags := flag.NewFlagSet("hyperiond", flag.ExitOnError)
 	var config server.Config
 	var peers string
+	cluster := flags.String("config", "", "cluster file describing every node; selects this one by -id")
 	flags.Uint64Var(&config.ElectionTicks, "election-ticks", 0, "base election timeout in ticks")
 	id := flags.Uint("id", 0, "node ID (1..64)")
 	flags.StringVar(&config.PeerAddress, "peer-address", "", "peer listen address")
@@ -39,22 +40,52 @@ func runServe(args []string) int {
 	flags.DurationVar(&config.RequestTimeout, "request-timeout", 5*time.Second, "client request timeout")
 	flags.Uint64Var(&config.SnapshotEntries, "snapshot-entries", 10000, "committed entries between snapshots")
 	_ = flags.Parse(args)
-	config.ID = uint32(*id)
-	config.Peers = make(map[uint32]string)
-	for _, item := range strings.Split(peers, ",") {
-		if item == "" {
-			continue
+
+	if *cluster != "" {
+		// A cluster file supplies everything except which node this process
+		// is. Silently ignoring a flag the operator also passed would start a
+		// node with settings they did not intend, so conflicting flags are an
+		// error rather than a preference.
+		var conflicting []string
+		flags.Visit(func(f *flag.Flag) {
+			if f.Name != "config" && f.Name != "id" {
+				conflicting = append(conflicting, "-"+f.Name)
+			}
+		})
+		if len(conflicting) > 0 {
+			return serveFatalf("-config supplies %s; pass them in the file or drop -config",
+				strings.Join(conflicting, ", "))
 		}
-		parts := strings.SplitN(item, "=", 2)
-		if len(parts) != 2 {
-			return serveFatalf("invalid peer %q", item)
+		if *id == 0 {
+			return serveFatalf("-config needs -id to say which node this process is")
 		}
-		value, err := strconv.ParseUint(parts[0], 10, 32)
-		if err != nil || value == 0 {
-			return serveFatalf("invalid peer ID %q", parts[0])
+		spec, err := server.LoadSpec(*cluster)
+		if err != nil {
+			return serveFatalf("%v", err)
 		}
-		config.Peers[uint32(value)] = parts[1]
+		config, err = spec.ConfigFor(uint32(*id))
+		if err != nil {
+			return serveFatalf("%v", err)
+		}
+	} else {
+		config.ID = uint32(*id)
+		config.Peers = make(map[uint32]string)
+		for _, item := range strings.Split(peers, ",") {
+			if item == "" {
+				continue
+			}
+			parts := strings.SplitN(item, "=", 2)
+			if len(parts) != 2 {
+				return serveFatalf("invalid peer %q", item)
+			}
+			value, err := strconv.ParseUint(parts[0], 10, 32)
+			if err != nil || value == 0 {
+				return serveFatalf("invalid peer ID %q", parts[0])
+			}
+			config.Peers[uint32(value)] = parts[1]
+		}
 	}
+
 	instance, err := server.Open(config)
 	if err != nil {
 		return serveFatalf("open: %v", err)
