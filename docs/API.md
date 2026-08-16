@@ -8,9 +8,9 @@ that file being updated in the same change.
 
 ## Status
 
-No version is tagged yet. Until one is, consumers get a pseudo-version and
-**nothing here is stable**. The tiers below describe what stability will mean
-once tagging starts, and what breaking each tier would cost.
+The contractual surface is recorded in `docs/api-surface.txt` and gated by
+`internal/apisurface`: it cannot drift without a reviewable diff. From `v0.1.0`
+on, changing it requires a minor version bump.
 
 ## Tier 1: the framework surface
 
@@ -89,14 +89,12 @@ tier 1 severity.
 
 ## Versioning
 
-Semantic versioning once tagging starts, at `v0.x.y` until the framework
-surface has survived contact with an outside user:
+Semantic versioning from `v0.1.0`:
 
 - **patch** (`v0.1.0` to `v0.1.1`): tier 2 changes, fixes, new tests, evidence.
 - **minor** (`v0.1.x` to `v0.2.0`): any tier 1 change, any CLI flag or exit
   code change, any new tier 1 identifier.
-- **major**: reserved for `v1.0.0`, which should not happen before the
-  framework surface has been used by someone who did not write it.
+- **major** (`v1.0.0`): a redesign of the framework surface.
 
 A release must carry the gate evidence for the commit it tags, following the
 practice in `benchmarks/`.

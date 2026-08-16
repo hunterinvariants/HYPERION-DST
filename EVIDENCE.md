@@ -17,6 +17,25 @@ Every result is tied to a named configuration or finite verification bound.
 | NVMe | 10,000 raw durable operations pass on the named GCP Local SSD NVMe configuration | [GCP Local SSD NVMe report](benchmarks/gcp-local-nvme-2026-07-28.md) |
 | Formal model | bounded TLC exploration completes with no invariant violation | [Phase 6 Sentinel report](benchmarks/sentinel-phase6-2026-07-28.md) |
 
+## Framework evidence
+
+The engine, its invariants, its fault injection, the scenario format, and the
+command extraction were built after the phases above and are **not** part of
+any roadmap phase. They claim no phase acceptance, and nothing in this section
+alters a result above it. They carry their own gate evidence:
+
+| Area | Result | Evidence |
+|---|---|---|
+| Deterministic engine | 7,000 paired runs compare `dst.Engine` against the qualified `sim.Simulator` at every tick and require a bit-identical execution | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
+| Invariants and faults | packaged Raft properties, leader partition, and one-way link failure hold across 1,000 seeds each | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
+| Storage conformance | `MemoryDevice` and `FileDevice` pass the ten `wal.Device` properties | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
+| Command extraction | seven binaries compared byte-for-byte against their pre-extraction builds, including the `chaos` and `raw-bench` refusal paths; Phase 5 cluster gate re-run for `hyperiond` | [Command extraction](benchmarks/sentinel-hyperion-cli-2026-08-16.md) |
+
+Each report states explicitly what its run does not establish. The engine
+equivalence is a relative comparison between two implementations on one host,
+not a claim about cross-platform trace stability; the invariants are safety
+properties only, with no liveness property checked.
+
 ## NVMe result
 
 Configuration: GCP `n2-custom-4-12288`, Ubuntu 24.04.4 LTS, kernel
