@@ -26,10 +26,13 @@ notes.
 | `storage/storagetest` | `RunDeviceSuite`, `NewDevice` |
 | `storage` | `Entry` |
 | `raft` | `StableStore`, `SnapshotStore`, `HardState`, `Entry`, `Snapshot`, `ErrStorage` |
+| `server` | `Spec`, `SpecNode`, `LoadSpec`, `ReadSpec`, `Spec.ConfigFor`, `Spec.Validate`, `MaxNodeID`, and the cluster JSON field names |
 
-The `raft` entry is narrow on purpose. Only the persistence boundary is
-contractual, because that is what an alternative storage backend implements.
-The rest of `raft` is tier 2.
+The `raft` and `server` entries are narrow on purpose. In `raft` only the
+persistence boundary is contractual, because that is what an alternative
+storage backend implements. In `server` only the cluster file format is, because
+that is what an operator writes; `server.Config`, `server.Server`, and the rest
+are tier 2 and may change in a patch release.
 
 ### What counts as a break
 

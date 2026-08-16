@@ -23,13 +23,15 @@ import (
 
 // Packages are the module-relative directories whose surface is recorded.
 //
-// raft is included even though only its persistence boundary is contractual;
-// docs/API.md says which identifiers those are. Recording the whole package
-// means a change to the rest still appears in review rather than silently.
+// raft and server are included even though only part of each is contractual —
+// raft's persistence boundary and server's cluster file format. docs/API.md
+// says which identifiers those are. Recording the whole package means a change
+// to the rest still appears in review rather than silently.
 var Packages = []string{
 	"dst",
 	"dst/scenario",
 	"raft",
+	"server",
 	"storage",
 	"storage/storagetest",
 	"storage/wal",

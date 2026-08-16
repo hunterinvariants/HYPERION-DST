@@ -196,6 +196,48 @@ type StableStore interface
 type State uint8
 var ErrStorage
 
+## server
+const MaxNodeID
+func (s *Server) Run(ctx context.Context) error
+func (s Spec) ConfigFor(id uint32) (Config, error)
+func (s Spec) Validate() error
+func LoadSpec(path string) (Spec, error)
+func Open(config Config) (*Server, error)
+func ReadSpec(r io.Reader) (Spec, error)
+type Config struct
+    Config.ID uint32
+    Config.Peers map[uint32]string
+    Config.PeerAddress string
+    Config.ClientAddress string
+    Config.HTTPAddress string
+    Config.DataDir string
+    Config.ElectionTicks uint64
+    Config.TickInterval time.Duration
+    Config.QueueCapacity int
+    Config.RequestTimeout time.Duration
+    Config.SnapshotEntries uint64
+type Metrics struct
+    Metrics.Requests atomic.Uint64
+    Metrics.Committed atomic.Uint64
+    Metrics.Duplicates atomic.Uint64
+    Metrics.Busy atomic.Uint64
+    Metrics.PeerErrors atomic.Uint64
+type Server struct
+type Spec struct
+    Spec.Name string
+    Spec.Nodes []SpecNode
+    Spec.ElectionTicks uint64
+    Spec.TickInterval string
+    Spec.QueueCapacity int
+    Spec.RequestTimeout string
+    Spec.SnapshotEntries uint64
+type SpecNode struct
+    SpecNode.ID uint32
+    SpecNode.Peer string
+    SpecNode.Client string
+    SpecNode.HTTP string
+    SpecNode.DataDir string
+
 ## storage
 type Entry struct
     Entry.Index uint64

@@ -1,0 +1,44 @@
+{
+  "name": "five node loopback cluster",
+  "tickInterval": "50ms",
+  "requestTimeout": "5s",
+  "queueCapacity": 1024,
+  "snapshotEntries": 10000,
+  "nodes": [
+    {
+      "id": 1,
+      "peer": "127.0.0.1:9101",
+      "client": "127.0.0.1:9201",
+      "http": "127.0.0.1:9301",
+      "dataDir": "/var/tmp/hyperion/node1"
+    },
+    {
+      "id": 2,
+      "peer": "127.0.0.1:9102",
+      "client": "127.0.0.1:9202",
+      "http": "127.0.0.1:9302",
+      "dataDir": "/var/tmp/hyperion/node2"
+    },
+    {
+      "id": 3,
+      "peer": "127.0.0.1:9103",
+      "client": "127.0.0.1:9203",
+      "http": "127.0.0.1:9303",
+      "dataDir": "/var/tmp/hyperion/node3"
+    },
+    {
+      "id": 4,
+      "peer": "127.0.0.1:9104",
+      "client": "127.0.0.1:9204",
+      "http": "127.0.0.1:9304",
+      "dataDir": "/var/tmp/hyperion/node4"
+    },
+    {
+      "id": 5,
+      "peer": "127.0.0.1:9105",
+      "client": "127.0.0.1:9205",
+      "http": "127.0.0.1:9305",
+      "dataDir": "/var/tmp/hyperion/node5"
+    }
+  ]
+}

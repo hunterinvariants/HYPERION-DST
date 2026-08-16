@@ -83,6 +83,15 @@ go run ./cmd/hyperion help
 go run ./cmd/hyperion seeds -from 1 -to 1000 -steps 1000
 ```
 
+A cluster can be declared once and shared by every node, which selects its own
+entry by identifier. The peer list is derived from the file, so the processes
+of a cluster cannot disagree about who the members are. See
+[examples/cluster.json](examples/cluster.json).
+
+```bash
+go run ./cmd/hyperiond -config examples/cluster.json -id 3
+```
+
 Linux capability and integration gates:
 
 ```bash
