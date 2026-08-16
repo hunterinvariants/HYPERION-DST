@@ -8,11 +8,14 @@ import (
 )
 
 // expectedNames pins the command set for this platform. A command that appears
-// or disappears without this list changing is a mistake, because every name
-// here is also the name of a standalone binary under cmd/ and is referenced by
-// the recorded qualification gates.
+// or disappears without this list changing is a mistake.
+//
+// Most of these names are also standalone binaries under cmd/, invoked by name
+// from scripts/*.sh, the CI workflows, and the recorded evidence; those cannot
+// be renamed. "simulate" and "verify" are newer and exist only as subcommands,
+// because nothing historical refers to them.
 func expectedNames() []string {
-	names := []string{"backup", "ctl", "probe", "seeds", "serve", "sim", "simulate", "uring-bench"}
+	names := []string{"backup", "ctl", "probe", "seeds", "serve", "sim", "simulate", "uring-bench", "verify"}
 	if runtime.GOOS == "linux" {
 		names = append(names, "chaos")
 		if runtime.GOARCH == "amd64" {
