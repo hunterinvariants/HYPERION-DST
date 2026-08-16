@@ -89,8 +89,16 @@ current-term commit, compaction, InstallSnapshot, joint/final membership, and
 crash recovery. Checked invariants cover type correctness, election safety,
 committed-prefix safety, snapshot safety, and durable-vote safety.
 
+The depth above is the value from a serial run, which is the reliable one.
+Under `-workers auto` TLC occasionally reports one level more, because a worker
+can reach the next level before the current one closes and TLC keeps the
+maximum seen; re-running this model gave 26, 25, and 25 in parallel against 25
+serially, with identical state counts throughout.
+
 Fingerprint-collision estimates reported by TLC were `1.3E-5` optimistic and
-`3.3E-6` from actual fingerprints. This is bounded model checking, not an
+`3.3E-6` from actual fingerprints. The second figure describes that run rather
+than the model: TLC draws a fresh fingerprint seed each time, and a later run
+of the same model reported `5.6E-7`. This is bounded model checking, not an
 unbounded proof.
 
 ## Claim boundary
