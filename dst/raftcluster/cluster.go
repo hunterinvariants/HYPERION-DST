@@ -93,6 +93,39 @@ func (c *Cluster) Propose(command uint64) bool {
 	return false
 }
 
+// ProposeJoint submits a joint configuration to whichever node accepts it.
+// Callers must run the engine's Collect afterwards.
+func (c *Cluster) ProposeJoint(voters []uint32) bool {
+	for _, id := range c.ids {
+		if c.nodes[id].ProposeJoint(voters) {
+			return true
+		}
+	}
+	return false
+}
+
+// ProposeFinal submits the final configuration that leaves a joint transition.
+// Callers must run the engine's Collect afterwards.
+func (c *Cluster) ProposeFinal() bool {
+	for _, id := range c.ids {
+		if c.nodes[id].ProposeFinal() {
+			return true
+		}
+	}
+	return false
+}
+
+// Compact snapshots a node at its applied index and reports whether anything
+// was compacted. The caller supplies the deterministic state-machine image that
+// index represents. Compaction produces no messages, so no Collect is needed.
+func (c *Cluster) Compact(id uint32, state []byte) bool {
+	node, ok := c.nodes[id]
+	if !ok || node.Applied <= node.BaseIndex {
+		return false
+	}
+	return node.Compact(node.Applied, state)
+}
+
 // Leader returns the current leader, or zero if there is none.
 func (c *Cluster) Leader() uint32 {
 	for _, id := range c.ids {
