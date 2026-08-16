@@ -22,12 +22,26 @@ type TLCResult struct {
 	StatesGenerated   uint64 `json:"statesGenerated"`
 	DistinctStates    uint64 `json:"distinctStates"`
 	StatesLeftOnQueue uint64 `json:"statesLeftOnQueue"`
-	Depth             uint64 `json:"depth"`
+
+	// Depth is the number of levels TLC reports for the complete state graph
+	// search. Treat it as informational, not as a stable measurement: under
+	// parallel search it can overshoot the true graph depth by one, because a
+	// worker may reach the next level before the current one closes and TLC
+	// records the maximum seen. Measured on this repository's model, four runs
+	// gave 26, 25, 25 with -workers auto and 25 with -workers 1. The state
+	// counts were identical across all four.
+	//
+	// For an evidence-grade depth, run the model check serially.
+	Depth uint64 `json:"depth"`
 
 	// CollisionOptimistic and CollisionActual are TLC's own estimates of the
 	// probability that two distinct states shared a fingerprint and part of
 	// the state space therefore went unchecked. They are why a TLC result is
 	// bounded model checking and not a proof, so they belong in any report.
+	//
+	// CollisionActual varies between runs because TLC picks a fresh
+	// fingerprint seed each time. Record it as a property of the run, never of
+	// the model.
 	CollisionOptimistic string `json:"collisionOptimistic,omitempty"`
 	CollisionActual     string `json:"collisionActual,omitempty"`
 
