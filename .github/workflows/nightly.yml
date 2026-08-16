@@ -16,9 +16,8 @@ permissions:
 jobs:
   wide-sweep:
     runs-on: ubuntu-latest
-    # Measured on the development host: 73 s for the campaigns and 61 s for the
-    # sweep. A two-core runner should land well under ten minutes, so a job
-    # approaching this limit means something changed, not that the box is slow.
+    # The first run on this workflow took 2m02s. A job approaching the limit
+    # below therefore means something changed, not that the runner is slow.
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
