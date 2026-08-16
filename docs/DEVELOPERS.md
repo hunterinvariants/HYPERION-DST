@@ -8,6 +8,10 @@ Three things are pluggable: the protocol under test, the properties it must
 satisfy, and the faults it must survive. A fourth, the durable storage backend,
 comes with a conformance suite rather than an abstraction to implement.
 
+[docs/API.md](API.md) says which identifiers are contractual and which are
+reference implementation you should not build on. Nothing is version-tagged
+yet, so read that before depending on any of it.
+
 ## Driving your own protocol
 
 `dst.Engine` owns virtual time, seeded message scheduling, loss and delay, and a
