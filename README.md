@@ -73,6 +73,16 @@ go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
 go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
 ```
 
+Every command is also reachable through one umbrella binary. The subcommands run
+the same implementations as the standalone binaries, with the same flags and
+exit codes; commands needing kernel facilities the build cannot reach are not
+listed.
+
+```bash
+go run ./cmd/hyperion help
+go run ./cmd/hyperion seeds -from 1 -to 1000 -steps 1000
+```
+
 Linux capability and integration gates:
 
 ```bash

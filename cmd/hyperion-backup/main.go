@@ -1,29 +1,11 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
 
-	"github.com/hunterinvariants/HYPERION-DST/backup"
+	"github.com/hunterinvariants/HYPERION-DST/internal/cli"
 )
 
-func main() {
-	mode := flag.String("mode", "create", "create or restore")
-	data := flag.String("data-dir", "", "offline node data directory")
-	image := flag.String("backup-dir", "", "new backup directory")
-	flag.Parse()
-	var err error
-	switch *mode {
-	case "create":
-		err = backup.Create(*data, *image)
-	case "restore":
-		err = backup.Restore(*image, *data)
-	default:
-		err = fmt.Errorf("invalid mode %q", *mode)
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "hyperion-backup:", err)
-		os.Exit(1)
-	}
-}
+// This binary keeps its historical name and behavior; the implementation lives
+// in internal/cli and is shared with the hyperion umbrella command.
+func main() { os.Exit(cli.Execute("backup", os.Args[1:])) }
