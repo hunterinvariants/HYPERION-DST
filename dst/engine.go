@@ -68,15 +68,16 @@ type Engine[M any] struct {
 	// Now is the current virtual time, in steps since the run started.
 	Now uint64
 
-	cluster Cluster[M]
-	wire    Wire[M]
-	rng     *rand.Rand
-	drop    int
-	delay   uint64
-	seq     uint64
-	queue   []event[M]
-	trace   [32]byte
-	scratch []M
+	cluster    Cluster[M]
+	wire       Wire[M]
+	rng        *rand.Rand
+	drop       int
+	delay      uint64
+	seq        uint64
+	queue      []event[M]
+	trace      [32]byte
+	scratch    []M
+	invariants []Invariant
 }
 
 // New builds an engine over a cluster. The cluster must already be
@@ -122,6 +123,49 @@ func (e *Engine[M]) Run(steps uint64) {
 	for range steps {
 		e.Step()
 	}
+}
+
+// Watch registers invariants for StepChecked and RunChecked to evaluate. It is
+// additive: calling it twice keeps both sets. Step and Run ignore invariants
+// entirely, so an existing run loop keeps its exact behavior.
+func (e *Engine[M]) Watch(invariants ...Invariant) {
+	e.invariants = append(e.invariants, invariants...)
+}
+
+// StepChecked advances one step and then evaluates every registered invariant
+// in registration order, returning a *Violation for the first failure.
+func (e *Engine[M]) StepChecked() error {
+	e.Step()
+	return e.CheckInvariants()
+}
+
+// RunChecked advances up to steps, stopping at the first violation. The engine
+// is left at the step where the violation was detected so the caller can
+// inspect the cluster.
+func (e *Engine[M]) RunChecked(steps uint64) error {
+	for range steps {
+		if err := e.StepChecked(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CheckInvariants evaluates the registered invariants without advancing time.
+// Use it after driving the cluster out of band, for example after a proposal or
+// a restart.
+func (e *Engine[M]) CheckInvariants() error {
+	for _, inv := range e.invariants {
+		if err := inv.Check(); err != nil {
+			return &Violation{
+				Invariant: inv.Name(),
+				Step:      e.Now,
+				Trace:     e.TraceHash(),
+				Err:       err,
+			}
+		}
+	}
+	return nil
 }
 
 // Collect drains every node's outbound buffer into the schedule, applying loss

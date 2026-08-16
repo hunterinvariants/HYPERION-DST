@@ -5,3 +5,10 @@
 *.out
 
 /.gocache/
+
+# Gate output produced on the qualification host. Reports in benchmarks/ cite
+# these paths; the raw files themselves stay out of the repository.
+/benchmarks/artifacts/
+/jepsen/store/
+/jepsen/target/
+/verification/tla/states/
