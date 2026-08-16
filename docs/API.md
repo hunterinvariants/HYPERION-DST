@@ -101,6 +101,26 @@ surface has survived contact with an outside user:
 A release must carry the gate evidence for the commit it tags, following the
 practice in `benchmarks/`.
 
+## Releasing
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`. It refuses to publish
+anything until the tagged commit passes `go vet`, the full race suite, and the
+1,000-seed sweep, because a release that skipped its gates would be the kind of
+unbacked claim this repository exists to avoid.
+
+It then builds the `hyperion` umbrella binary for linux, darwin, and windows on
+amd64 and arm64, writes `SHA256SUMS`, generates an SPDX bill of materials, and
+records a Sigstore build attestation with the workflow's own OIDC identity —
+there is no signing key to store or leak.
+
+```bash
+gh attestation verify hyperion-v0.1.0-linux-amd64 --repo hunterinvariants/HYPERION-DST
+sha256sum -c SHA256SUMS
+```
+
+Only the umbrella binary ships. It reaches every command, and the standalone
+binaries exist for the recorded gate scripts, which build from source.
+
 ## Keeping this file honest
 
 `docs/api-surface.txt` lists every exported identifier in the tier 1 packages.
