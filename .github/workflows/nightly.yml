@@ -1,0 +1,47 @@
+name: nightly
+
+# The push workflow runs the campaigns at their default seed counts, which is
+# the right trade for every commit. The wide sweeps below take too long for
+# that but find what a narrow sweep cannot, and until now they only ran when
+# someone remembered to type them on the qualification host.
+on:
+  schedule:
+    # 03:17 UTC. An odd minute avoids the queue that forms on the hour.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wide-sweep:
+    runs-on: ubuntu-latest
+    # Measured on the development host: 73 s for the campaigns and 61 s for the
+    # sweep. A two-core runner should land well under ten minutes, so a job
+    # approaching this limit means something changed, not that the box is slow.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # 1,000 seeds across the seven equivalence campaigns, the invariant
+      # campaign, and both fault campaigns. The race detector is deliberately
+      # off here: the engine is single-threaded, ci.yml already runs the whole
+      # suite under -race on every push, and -race would roughly triple this.
+      - name: Equivalence and fault campaigns at 1000 seeds
+        env:
+          HYPERION_EQUIV_SEEDS: "1000"
+        run: >
+          go test ./dst/... -count=1 -timeout 25m -v
+          -run 'TestEngineMatchesFrozenSimulator|TestEquivalenceComparisonHasTeeth|TestSafetyInvariantsHoldUnderFaults|TestMajorityElectsANewLeader|TestAsymmetricLink'
+
+      # ci.yml already sweeps seeds 1..1000 at 1,000 steps on every push. This
+      # covers ground that run does not reach rather than repeating it.
+      - name: Extended deterministic seed sweep
+        run: go run ./cmd/hyperion-seeds -from 1001 -to 6000 -steps 2000
+
+      - name: Declared scenario
+        run: go run ./cmd/hyperion simulate -config examples/leader-partition.json
