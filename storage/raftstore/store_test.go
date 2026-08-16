@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 func TestSnapshotBeforeFenceCrashCompletesCompactionOnOpen(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/backup"
-	"github.com/hunterinvariants/HYPERION-DST/storage/uring"
+	"github.com/hunterinvariants/hyperion/backup"
+	"github.com/hunterinvariants/hyperion/storage/uring"
 )
 
 func probeCommand() Command {

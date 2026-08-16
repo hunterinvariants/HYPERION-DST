@@ -5,7 +5,7 @@ package uringwal
 import (
 	"errors"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage/uring"
+	"github.com/hunterinvariants/hyperion/storage/uring"
 )
 
 const BlockSize = uring.DefaultAlignment

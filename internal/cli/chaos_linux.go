@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/chaos"
+	"github.com/hunterinvariants/hyperion/chaos"
 )
 
 func chaosCommand() Command {

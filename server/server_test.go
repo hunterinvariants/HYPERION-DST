@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/protocol"
+	"github.com/hunterinvariants/hyperion/protocol"
 )
 
 func TestSingleNodeClientDeduplicationAndRestart(t *testing.T) {

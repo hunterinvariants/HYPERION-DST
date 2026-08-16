@@ -3,7 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/hyperion/raft"
 )
 
 const peerFixedSize = 176

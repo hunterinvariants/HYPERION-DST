@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/hunterinvariants/HYPERION-DST/internal/cli"
+	"github.com/hunterinvariants/hyperion/internal/cli"
 )
 
 // This binary keeps its historical name and behavior; the implementation lives

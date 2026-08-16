@@ -88,7 +88,7 @@ const clusterTemplate = `package main
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
+	"github.com/hunterinvariants/hyperion/dst"
 )
 
 // Cluster is the entire integration with the engine: four methods for
@@ -166,8 +166,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
-	"github.com/hunterinvariants/HYPERION-DST/dst/scenario"
+	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/hyperion/dst/scenario"
 )
 
 func newEngine(t *testing.T, nodes int, config dst.Config) (*Cluster, *dst.Engine[Message]) {
@@ -302,7 +302,7 @@ const scenarioTemplate = `{
 
 const readmeTemplate = `# MODULEPATH
 
-A starter project for testing a distributed protocol with the HYPERION
+A starter project for testing a distributed protocol with the Hyperion
 deterministic engine.
 
     go mod tidy
@@ -346,6 +346,6 @@ is the detector.
 The invariants are safety properties. A protocol that does nothing at all
 violates none of them, so assert progress separately.
 
-See the HYPERION documentation for the engine, the scenario format, and the
+See the Hyperion documentation for the engine, the scenario format, and the
 storage backend conformance suite.
 `

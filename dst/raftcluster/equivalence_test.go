@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
-	"github.com/hunterinvariants/HYPERION-DST/dst/raftcluster"
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/sim"
+	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/hyperion/dst/raftcluster"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/sim"
 )
 
 // equivalenceSeeds keeps the default CI cost low while allowing a qualification

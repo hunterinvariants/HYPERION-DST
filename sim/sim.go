@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage/raftwal"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage/raftwal"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 type scheduled struct {

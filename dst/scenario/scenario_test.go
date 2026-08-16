@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst/scenario"
+	"github.com/hunterinvariants/hyperion/dst/scenario"
 )
 
 const valid = `{

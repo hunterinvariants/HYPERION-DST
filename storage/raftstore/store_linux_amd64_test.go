@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/storage/uringwal"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/storage/uringwal"
 )
 
 func TestIOUringSnapshotCompactionRecovery(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 // NewDevice constructs a fresh, empty device. The suite calls it once per

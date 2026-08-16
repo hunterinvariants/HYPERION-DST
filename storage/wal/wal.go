@@ -3,7 +3,7 @@ package wal
 import (
 	"context"
 
-	"github.com/hunterinvariants/HYPERION-DST/storage"
+	"github.com/hunterinvariants/hyperion/storage"
 )
 
 // Log serializes entries into fixed-size records. Append stages records;

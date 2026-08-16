@@ -3,8 +3,8 @@ package raftcluster
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/HYPERION-DST/dst"
-	"github.com/hunterinvariants/HYPERION-DST/raft"
+	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/hyperion/raft"
 )
 
 // SafetyInvariants returns the Raft safety properties the qualified simulator

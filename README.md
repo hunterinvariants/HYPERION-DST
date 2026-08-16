@@ -1,9 +1,9 @@
-# HYPERION-DST
+# Hyperion
 
-[![CI](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/ci.yml)
-[![Nightly](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/nightly.yml)
-[![Kernel build](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/kernel.yml)
-[![Formal](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/HYPERION-DST/actions/workflows/formal.yml)
+[![CI](https://github.com/hunterinvariants/hyperion/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/ci.yml)
+[![Nightly](https://github.com/hunterinvariants/hyperion/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/nightly.yml)
+[![Kernel build](https://github.com/hunterinvariants/hyperion/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/kernel.yml)
+[![Formal](https://github.com/hunterinvariants/hyperion/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/formal.yml)
 ![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
 
 Test distributed protocols the way you test pure functions: run your own
@@ -194,3 +194,14 @@ isolated netns -> XDP / TC / netem -> controlled kernel faults
 The six scoped qualification phases are complete and frozen at the documented
 reference baseline. Framework work claims no phase acceptance and does not amend
 that record.
+
+## Renamed from HYPERION-DST
+
+The project was `HYPERION-DST` through `v0.1.1`, when deterministic simulation
+testing was its defining feature. It now drives any protocol, so the suffix
+described the wrong thing.
+
+The module path is `github.com/hunterinvariants/hyperion` from `v0.2.0` on.
+GitHub redirects the old repository URL, but the old module path does not
+resolve to the new one — update imports rather than relying on a redirect.
+Releases `v0.1.0` and `v0.1.1` remain published under the old name.

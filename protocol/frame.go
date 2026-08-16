@@ -1,4 +1,4 @@
-// Package protocol defines HYPERION's versioned peer and client wire format.
+// Package protocol defines Hyperion's versioned peer and client wire format.
 package protocol
 
 import (

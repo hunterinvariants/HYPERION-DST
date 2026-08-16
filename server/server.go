@@ -13,11 +13,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/protocol"
-	"github.com/hunterinvariants/HYPERION-DST/raft"
-	"github.com/hunterinvariants/HYPERION-DST/statemachine"
-	"github.com/hunterinvariants/HYPERION-DST/storage/raftstore"
-	"github.com/hunterinvariants/HYPERION-DST/storage/wal"
+	"github.com/hunterinvariants/hyperion/protocol"
+	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/hyperion/statemachine"
+	"github.com/hunterinvariants/hyperion/storage/raftstore"
+	"github.com/hunterinvariants/hyperion/storage/wal"
 )
 
 type Config struct {

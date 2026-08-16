@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/HYPERION-DST/protocol"
-	"github.com/hunterinvariants/HYPERION-DST/server"
+	"github.com/hunterinvariants/hyperion/protocol"
+	"github.com/hunterinvariants/hyperion/server"
 )
 
 func serveCommand() Command {

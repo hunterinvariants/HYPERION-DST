@@ -4,7 +4,7 @@
 // injection, and a reproducible execution trace. It owns no protocol state:
 // everything protocol-specific sits behind Cluster and Wire, so any
 // message-passing protocol can be driven under the same conditions the
-// HYPERION Raft core is driven under.
+// Hyperion Raft core is driven under.
 package dst
 
 import (
