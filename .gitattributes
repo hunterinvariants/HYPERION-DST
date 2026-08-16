@@ -1,0 +1,7 @@
+# The repository stores text with LF. Checking Go sources out with CRLF on
+# Windows makes gofmt report every file as unformatted and produces a warning
+# on every staging operation, so pin the working-tree ending too.
+* text=auto eol=lf
+
+*.png binary
+*.tgz binary
