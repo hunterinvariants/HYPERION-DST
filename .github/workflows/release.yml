@@ -102,3 +102,44 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" dist/* \
             --title "${GITHUB_REF_NAME}" \
             --notes "Binaries are the promtact umbrella command. Verify with SHA256SUMS, and with \`gh attestation verify\` against this repository. See docs/API.md for what is contractual at this version."
+
+  # Until now the released darwin and windows binaries were cross-compiled and
+  # never started. The source is tested on all three platforms by ci.yml, which
+  # is a different claim: it says the code works there, not that the file we
+  # handed out does. This downloads the published artifact and runs it.
+  smoke:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-amd64
+          - os: macos-latest
+            asset: darwin-arm64
+          - os: windows-latest
+            asset: windows-amd64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Download the published binary and check it against SHA256SUMS
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          asset="promtact-${GITHUB_REF_NAME}-${{ matrix.asset }}"
+          gh release download "${GITHUB_REF_NAME}" -R "${GITHUB_REPOSITORY}" \
+            -p "$asset" -p SHA256SUMS
+          shasum -a 256 -c SHA256SUMS --ignore-missing
+
+      - name: Run it, and require it to name this release
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="promtact-${GITHUB_REF_NAME}-${{ matrix.asset }}"
+          chmod +x "$asset" || true
+          "./$asset" version
+          # A binary that runs but reports the wrong release would pass a plain
+          # smoke test, and that is the one thing this artifact exists to answer.
+          "./$asset" version | grep -qx "promtact ${GITHUB_REF_NAME}"
+          "./$asset" help | grep -q "run \"promtact <command> -h\""
