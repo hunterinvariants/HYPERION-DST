@@ -34,9 +34,8 @@ checking, or checked-in measurements. Every claim carries its bounds in
   `go.mod` fetches the release this project pins, so whatever Go your
   distribution ships is enough. The Go 1.22 on Ubuntu 24.04 switches to
   go1.25.13 by itself, with no action from you.
-- **Go 1.25 or newer** to use it as a library in your own module. `go get`
-  raises your `go` line to 1.25, and an older toolchain then has nothing to
-  resolve unless you also add `toolchain go1.25.13` to your `go.mod`.
+- **Any Go from 1.21 on** to use it as a library too, provided your `go.mod`
+  names the toolchain. The Install section below does that in one line.
 - **Git**, to clone.
 - **A C compiler**, only for `go test ./... -race`, because `-race` requires
   cgo. Nothing else in this project does.
@@ -50,8 +49,15 @@ so the first line is for someone starting from an empty directory:
 
 ```bash
 go mod init example.com/yourproject
+go mod edit -go=1.25 -toolchain=go1.25.13
 go get github.com/hunterinvariants/promtact@latest
 ```
+
+The middle line matters if your Go is older than 1.25. `go get` raises your `go`
+directive to 1.25 and writes no toolchain to resolve it with, and from then on
+every `go` command in that directory fails with `toolchain not available`.
+Naming the toolchain first leaves you with a module that builds on the Go you
+already have.
 
 As a command, to run scenarios and the gates. This one needs no module and can
 be run from anywhere:
