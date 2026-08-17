@@ -106,9 +106,10 @@ promtact version
 
 ## Try it in a minute
 
+From inside the checkout. If you have not cloned it yet:
+`git clone https://github.com/hunterinvariants/Promtact.git && cd Promtact`
+
 ```bash
-git clone https://github.com/hunterinvariants/Promtact.git
-cd Promtact
 go test ./...
 go test ./examples/paxos -v
 go run ./cmd/promtact simulate -config examples/leader-partition.json
@@ -126,12 +127,17 @@ own invariants and partition campaigns. See
 Start your own from a working skeleton:
 
 ```bash
-go run ./cmd/promtact new ../mysystem && cd ../mysystem && go mod tidy && go test ./... -v
+go run ./cmd/promtact new ../mysystem
+(cd ../mysystem && go mod tidy && go test ./... -v)
 ```
 
 The target is outside this checkout on purpose: a generated project is its own
 Go module, and putting one inside the repository leaves an untracked directory
 that looks like something you forgot to commit.
+
+The parentheses run that line in a subshell, so your own shell stays in the
+checkout and the commands further down this page still work. Drop them when you
+are ready to move in and work on the new project.
 
 Every command lives behind one umbrella binary. Commands needing kernel
 facilities a build cannot reach are absent rather than listed and failing.
