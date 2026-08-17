@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/protocol"
+	"github.com/hunterinvariants/promtact/protocol"
 )
 
 func TestThreeProcessClusterReplicatesAndSurvivesLeaderShutdown(t *testing.T) {

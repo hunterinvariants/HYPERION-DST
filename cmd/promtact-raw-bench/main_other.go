@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	fmt.Fprintln(os.Stderr, "hyperion-raw-bench requires linux/amd64")
+	fmt.Fprintln(os.Stderr, "promtact-raw-bench requires linux/amd64")
 	os.Exit(2)
 }

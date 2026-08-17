@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-RUN=$(mktemp -d /var/tmp/hyperion-phase5.XXXXXX)
-BRIDGE=hyperion-br0
+RUN=$(mktemp -d /var/tmp/promtact-phase5.XXXXXX)
+BRIDGE=promtact-br0
 PREFIX=10.77.0
 
 cleanup() {
@@ -12,7 +12,7 @@ cleanup() {
     if [[ -f "$RUN/node$id.pid" ]]; then
       kill "$(cat "$RUN/node$id.pid")" 2>/dev/null
     fi
-    ip netns del "hyperion-n$id" 2>/dev/null
+    ip netns del "promtact-n$id" 2>/dev/null
   done
   ip link del "$BRIDGE" 2>/dev/null
 }
@@ -26,9 +26,9 @@ fi
 cleanup
 mkdir -p "$RUN"
 (cd "$ROOT" && go test ./... -race -count=1)
-go build -o "$RUN/hyperiond" "$ROOT/cmd/hyperiond"
-go build -o "$RUN/hyperionctl" "$ROOT/cmd/hyperionctl"
-go build -o "$RUN/hyperion-backup" "$ROOT/cmd/hyperion-backup"
+go build -o "$RUN/promtactd" "$ROOT/cmd/promtactd"
+go build -o "$RUN/promtactctl" "$ROOT/cmd/promtactctl"
+go build -o "$RUN/promtact-backup" "$ROOT/cmd/promtact-backup"
 
 ip link add "$BRIDGE" type bridge
 ip addr add "$PREFIX.1/24" dev "$BRIDGE"
@@ -40,9 +40,9 @@ for id in 1 2 3 4 5; do
 done
 
 for id in 1 2 3 4 5; do
-  ns="hyperion-n$id"
-  host="hyperion-h$id"
-  guest="hyperion-g$id"
+  ns="promtact-n$id"
+  host="promtact-h$id"
+  guest="promtact-g$id"
   ip netns add "$ns"
   ip link add "$host" type veth peer name "$guest"
   ip link set "$host" master "$BRIDGE"
@@ -53,7 +53,7 @@ for id in 1 2 3 4 5; do
   ip -n "$ns" link set "$guest" up
   ip -n "$ns" route add default via "$PREFIX.1"
   mkdir -p "$RUN/node$id"
-  ip netns exec "$ns" "$RUN/hyperiond" \
+  ip netns exec "$ns" "$RUN/promtactd" \
     -id "$id" \
     -peer-address "$PREFIX.$((10+id)):9100" \
     -client-address "$PREFIX.$((10+id)):9200" \
@@ -69,7 +69,7 @@ for id in 1 2 3 4 5; do
   for attempt in $(seq 1 100); do
     if curl -fsS "http://$PREFIX.$((10+id)):9300/healthz" >/dev/null &&
       curl -fsS "http://$PREFIX.$((10+id)):9300/metrics" |
-        grep -q '^hyperion_commit_index '; then
+        grep -q '^promtact_commit_index '; then
       break
     fi
     sleep 0.05
@@ -79,7 +79,7 @@ done
 leader=""
 for attempt in $(seq 1 100); do
   for id in 1 2 3 4 5; do
-    if "$RUN/hyperionctl" -address "$PREFIX.$((10+id)):9200" \
+    if "$RUN/promtactctl" -address "$PREFIX.$((10+id)):9200" \
       -operation put -client 1 -request 1 -key 999 -value 1 >/dev/null 2>&1; then
       leader=$id
       break 2
@@ -89,13 +89,13 @@ for attempt in $(seq 1 100); do
 done
 test -n "$leader"
 
-kill "-${HYPERION_KILL_SIGNAL:-TERM}" "$(cat "$RUN/node$leader.pid")"
+kill "-${PROMTACT_KILL_SIGNAL:-TERM}" "$(cat "$RUN/node$leader.pid")"
 wait "$(cat "$RUN/node$leader.pid")" 2>/dev/null || true
 
 backup_run=$(mktemp -d "$RUN/backup.XXXXXX")
-"$RUN/hyperion-backup" -mode create \
+"$RUN/promtact-backup" -mode create \
   -data-dir "$RUN/node$leader" -backup-dir "$backup_run/image"
-"$RUN/hyperion-backup" -mode restore \
+"$RUN/promtact-backup" -mode restore \
   -backup-dir "$backup_run/image" -data-dir "$backup_run/restored"
 cmp "$RUN/node$leader/raft.wal" "$backup_run/restored/raft.wal"
 
@@ -103,7 +103,7 @@ replacement=""
 for attempt in $(seq 1 150); do
   for id in 1 2 3 4 5; do
     [[ $id == "$leader" ]] && continue
-    if "$RUN/hyperionctl" -address "$PREFIX.$((10+id)):9200" \
+    if "$RUN/promtactctl" -address "$PREFIX.$((10+id)):9200" \
       -operation get -client 2 -request "$attempt" -key 999 |
       grep -q 'status=0.*value=1'; then
       replacement=$id
@@ -120,13 +120,13 @@ if command -v lein >/dev/null; then
   (
     for round in 1; do
       sleep 4
-      tc qdisc replace dev "hyperion-h$fault_node" root netem loss 100%
+      tc qdisc replace dev "promtact-h$fault_node" root netem loss 100%
       sleep 4
-      tc qdisc del dev "hyperion-h$fault_node" root 2>/dev/null || true
+      tc qdisc del dev "promtact-h$fault_node" root 2>/dev/null || true
     done
   ) &
   chaos_pid=$!
-  export HYPERION_CLIENTS="$PREFIX.11:9200,$PREFIX.12:9200,$PREFIX.13:9200,$PREFIX.14:9200,$PREFIX.15:9200"
+  export PROMTACT_CLIENTS="$PREFIX.11:9200,$PREFIX.12:9200,$PREFIX.13:9200,$PREFIX.14:9200,$PREFIX.15:9200"
   set +e
   (cd "$ROOT/jepsen" && lein run -- test --no-ssh --time-limit 15) 2>&1 |
     tee "$RUN/jepsen.log"

@@ -10,7 +10,7 @@ import (
 // benchmarks/sentinel-phase6-2026-07-28.md.
 const successOutput = `TLC2 Version 2.19 of Day Month 20?? (rev: 6e14a8d)
 Running breadth-first search Model-Checking with fp 44 and seed ...
-Parsing file /opt/hyperion/Hyperion/verification/tla/HyperionRaft.tla
+Parsing file /opt/promtact/Promtact/verification/tla/PromtactRaft.tla
 Starting... (2026-07-28 04:53:54)
 Computing initial states...
 Finished computing initial states: 1 distinct state generated at 2026-07-28 04:53:56.
@@ -30,7 +30,7 @@ Starting... (2026-08-16 21:00:00)
 Error: Invariant ElectionSafety is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
-State 2: <AppendEntries line 88, col 1 to line 99, col 20 of module HyperionRaft>
+State 2: <AppendEntries line 88, col 1 to line 99, col 20 of module PromtactRaft>
 1234 states generated, 456 distinct states found, 78 states left on queue.
 The depth of the complete state graph search is 7.
 Finished in 03s at (2026-08-16 21:00:03)

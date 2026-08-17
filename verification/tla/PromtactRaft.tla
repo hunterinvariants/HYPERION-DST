@@ -1,4 +1,4 @@
----------------------------- MODULE HyperionRaft ----------------------------
+---------------------------- MODULE PromtactRaft ----------------------------
 EXTENDS Naturals, FiniteSets, Sequences
 
 CONSTANTS Nodes, Nil, MaxTerm, MaxLog

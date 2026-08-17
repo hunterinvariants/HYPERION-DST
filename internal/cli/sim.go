@@ -10,7 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hunterinvariants/hyperion/sim"
+	"github.com/hunterinvariants/promtact/sim"
 )
 
 func simCommand() Command {
@@ -22,7 +22,7 @@ func simCommand() Command {
 }
 
 func runSim(args []string) int {
-	flags := flag.NewFlagSet("hyperion-sim", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact-sim", flag.ExitOnError)
 	seedText := flags.String("seed", "0x4A2C", "deterministic seed (decimal or 0x-prefixed)")
 	steps := flags.Uint64("steps", 10000, "virtual clock steps")
 	nodes := flags.Int("nodes", 5, "cluster size")
@@ -67,7 +67,7 @@ type seedResult struct {
 }
 
 func runSeeds(args []string) int {
-	flags := flag.NewFlagSet("hyperion-seeds", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact-seeds", flag.ExitOnError)
 	first := flags.Int64("from", 1, "first seed, inclusive")
 	last := flags.Int64("to", 1000, "last seed, inclusive")
 	steps := flags.Uint64("steps", 2000, "virtual steps per seed")

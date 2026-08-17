@@ -1,6 +1,6 @@
-# Building on Hyperion
+# Building on Promtact
 
-Hyperion is a reference consensus implementation, but its testing machinery
+Promtact is a reference consensus implementation, but its testing machinery
 is not specific to Raft. This document is for using that machinery on your own
 system.
 
@@ -159,7 +159,7 @@ replayed by someone who was not there when it was written.
 ```
 
 ```bash
-go run ./cmd/hyperion simulate -config examples/leader-partition.json
+go run ./cmd/promtact simulate -config examples/leader-partition.json
 ```
 
 ```
@@ -229,7 +229,7 @@ a durable record has no position and must carry one. They are converted at the
   delay bound the two cost the same; the heap matters at wide topologies with
   high delay bounds, where the scan is seven times slower.
 - **Kernel-level fault injection is separate.** `chaos` and `bpf/` drive real
-  XDP/TC programs and keep hard safety guards: a dedicated `hyperion-*`
+  XDP/TC programs and keep hard safety guards: a dedicated `promtact-*`
   namespace, validated CIDRs, and bounded delay and loss. Those guards are not
   extension points, and the deterministic `Injector` above has nothing to do
   with them.

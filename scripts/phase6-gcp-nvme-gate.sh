@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 # Destructive Phase 6 qualification for the disposable GCP Local SSD only.
 # Evidence is written below the repository, which must live on the boot disk.
-DEVICE_LINK=${HYPERION_PHASE6_DEVICE:-/dev/disk/by-id/google-local-nvme-ssd-0}
-OPERATIONS=${HYPERION_PHASE6_OPERATIONS:-10000}
+DEVICE_LINK=${PROMTACT_PHASE6_DEVICE:-/dev/disk/by-id/google-local-nvme-ssd-0}
+OPERATIONS=${PROMTACT_PHASE6_OPERATIONS:-10000}
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 OUT="$ROOT/benchmarks/artifacts/gcp-phase6-$STAMP"
@@ -64,13 +64,13 @@ command -v nvme >/dev/null && nvme smart-log "$DEVICE" || true
 cd "$ROOT"
 go test ./... -race -count=1
 bash verification/run-tlc.sh
-HYPERION_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal ./storage/raftstore \
+PROMTACT_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal ./storage/raftstore \
   -race -count=100
-go build -o "$OUT/hyperion-raw-bench" ./cmd/hyperion-raw-bench
+go build -o "$OUT/promtact-raw-bench" ./cmd/promtact-raw-bench
 
 # This is the only destructive operation. The binary independently repeats
 # block-device, size, mount, swap, and partition checks before opening O_DIRECT.
-"$OUT/hyperion-raw-bench" \
+"$OUT/promtact-raw-bench" \
   -device "$DEVICE_LINK" \
   -confirm-destroy "ERASE:$DEVICE" \
   -expected-size "$SIZE" \

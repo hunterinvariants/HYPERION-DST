@@ -1,6 +1,6 @@
 package cli
 
-// projectTemplate is what "hyperion new" writes. The protocol it contains is a
+// projectTemplate is what "promtact new" writes. The protocol it contains is a
 // placeholder, but a working one with a real safety property, so that a fresh
 // project passes its tests immediately and the first edit has something to
 // break. A skeleton full of TODOs teaches nothing about whether the wiring is
@@ -88,7 +88,7 @@ const clusterTemplate = `package main
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/promtact/dst"
 )
 
 // Cluster is the entire integration with the engine: four methods for
@@ -166,8 +166,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
-	"github.com/hunterinvariants/hyperion/dst/scenario"
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/scenario"
 )
 
 func newEngine(t *testing.T, nodes int, config dst.Config) (*Cluster, *dst.Engine[Message]) {
@@ -302,7 +302,7 @@ const scenarioTemplate = `{
 
 const readmeTemplate = `# MODULEPATH
 
-A starter project for testing a distributed protocol with the Hyperion
+A starter project for testing a distributed protocol with the Promtact
 deterministic engine.
 
     go mod tidy
@@ -346,6 +346,6 @@ is the detector.
 The invariants are safety properties. A protocol that does nothing at all
 violates none of them, so assert progress separately.
 
-See the Hyperion documentation for the engine, the scenario format, and the
+See the Promtact documentation for the engine, the scenario format, and the
 storage backend conformance suite.
 `

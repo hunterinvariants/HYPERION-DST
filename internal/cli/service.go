@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/protocol"
-	"github.com/hunterinvariants/hyperion/server"
+	"github.com/hunterinvariants/promtact/protocol"
+	"github.com/hunterinvariants/promtact/server"
 )
 
 func serveCommand() Command {
@@ -24,7 +24,7 @@ func serveCommand() Command {
 }
 
 func runServe(args []string) int {
-	flags := flag.NewFlagSet("hyperiond", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtactd", flag.ExitOnError)
 	var config server.Config
 	var peers string
 	cluster := flags.String("config", "", "cluster file describing every node; selects this one by -id")
@@ -99,7 +99,7 @@ func runServe(args []string) int {
 }
 
 func serveFatalf(format string, values ...any) int {
-	fmt.Fprintf(os.Stderr, "hyperiond: "+format+"\n", values...)
+	fmt.Fprintf(os.Stderr, "promtactd: "+format+"\n", values...)
 	return 1
 }
 
@@ -112,7 +112,7 @@ func ctlCommand() Command {
 }
 
 func runCtl(args []string) int {
-	flags := flag.NewFlagSet("hyperionctl", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtactctl", flag.ExitOnError)
 	address := flags.String("address", "127.0.0.1:9201", "client endpoint")
 	operation := flags.String("operation", "status", "put, delete, get, or status")
 	client := flags.Uint64("client", 1, "stable client ID")
@@ -127,14 +127,14 @@ func runCtl(args []string) int {
 	}
 	op, ok := ops[*operation]
 	if !ok {
-		fmt.Fprintln(os.Stderr, "hyperionctl: invalid operation")
+		fmt.Fprintln(os.Stderr, "promtactctl: invalid operation")
 		return 2
 	}
 	response, err := protocol.Call(*address, protocol.ClientRequest{
 		Operation: op, ClientID: *client, RequestID: *request, Key: *key, Value: *value,
 	}, *timeout)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "hyperionctl:", err)
+		fmt.Fprintln(os.Stderr, "promtactctl:", err)
 		return 1
 	}
 	fmt.Printf("status=%d leader=%d request=%d value=%d commit=%d\n",

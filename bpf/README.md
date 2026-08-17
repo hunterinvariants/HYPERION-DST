@@ -1,6 +1,6 @@
 # Kernel chaos layer
 
-`hyperion_chaos.bpf.c` provides CO-RE-compatible XDP ingress drops/partitions
+`promtact_chaos.bpf.c` provides CO-RE-compatible XDP ingress drops/partitions
 and TC egress drops/corruption. Build and load it only inside an isolated Linux
 network namespace.
 

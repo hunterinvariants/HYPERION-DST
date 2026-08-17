@@ -1,6 +1,6 @@
 # Operating envelope
 
-Hyperion is qualified only within the following recorded envelope.
+Promtact is qualified only within the following recorded envelope.
 
 - Linux amd64 with kernel 6.8 or newer and available `io_uring`.
 - Files or dedicated block devices must support aligned 4096-byte `O_DIRECT`.
@@ -10,7 +10,7 @@ Hyperion is qualified only within the following recorded envelope.
   configuration, and failed snapshot persistence cause fail-stop behavior.
 - Deployments require an odd voting set of at least three independent nodes.
 - Client request IDs must be stable across retries; server queues are bounded.
-- XDP/TC chaos tooling may only target dedicated `hyperion-*` namespaces and
+- XDP/TC chaos tooling may only target dedicated `promtact-*` namespaces and
   interfaces. Management interfaces are outside the supported envelope.
 - Backup is offline and checksummed. Restore must target an empty data
   directory and be validated before the node rejoins a cluster.

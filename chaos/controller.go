@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var safeName = regexp.MustCompile(`^hyperion-[a-zA-Z0-9_-]{1,32}$`)
+var safeName = regexp.MustCompile(`^promtact-[a-zA-Z0-9_-]{1,32}$`)
 
 type Plan struct {
 	Namespace string
@@ -29,7 +29,7 @@ func (p Plan) Validate() error {
 	if !safeName.MatchString(p.Namespace) ||
 		!safeName.MatchString(p.HostVeth) ||
 		!safeName.MatchString(p.PeerVeth) {
-		return errors.New("chaos: namespace and interfaces must start with hyperion-")
+		return errors.New("chaos: namespace and interfaces must start with promtact-")
 	}
 	if p.BPFObject == "" {
 		return errors.New("chaos: BPF object is required")

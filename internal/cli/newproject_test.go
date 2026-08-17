@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst/scenario"
+	"github.com/hunterinvariants/promtact/dst/scenario"
 )
 
 // TestProjectTemplateIsValidGo catches the failure that would matter most: a

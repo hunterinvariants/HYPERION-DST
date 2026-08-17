@@ -26,7 +26,7 @@ func verifyCommand() Command {
 // checker's flags, and it is what CI and the recorded evidence invoke. A second
 // invocation path here would be a second thing to keep correct.
 func runVerify(args []string) int {
-	flags := flag.NewFlagSet("hyperion verify", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact verify", flag.ExitOnError)
 	script := flags.String("script", "verification/run-tlc.sh", "model check script to run")
 	asJSON := flags.Bool("json", false, "print the result as JSON")
 	quiet := flags.Bool("quiet", false, "suppress the model checker's own output")

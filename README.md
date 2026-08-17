@@ -1,9 +1,9 @@
-# Hyperion
+# Promtact
 
-[![CI](https://github.com/hunterinvariants/hyperion/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/ci.yml)
-[![Nightly](https://github.com/hunterinvariants/hyperion/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/nightly.yml)
-[![Kernel build](https://github.com/hunterinvariants/hyperion/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/kernel.yml)
-[![Formal](https://github.com/hunterinvariants/hyperion/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/hyperion/actions/workflows/formal.yml)
+[![CI](https://github.com/hunterinvariants/promtact/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/ci.yml)
+[![Nightly](https://github.com/hunterinvariants/promtact/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/nightly.yml)
+[![Kernel build](https://github.com/hunterinvariants/promtact/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/kernel.yml)
+[![Formal](https://github.com/hunterinvariants/promtact/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/formal.yml)
 ![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
 
 Test distributed protocols the way you test pure functions: run your own
@@ -24,7 +24,7 @@ checking, or checked-in measurements. Every claim carries its bounds in
 ```bash
 go test ./... -race -count=1
 go test ./examples/paxos -v
-go run ./cmd/hyperion simulate -config examples/leader-partition.json
+go run ./cmd/promtact simulate -config examples/leader-partition.json
 ```
 
 The second command is the point of the project: a complete protocol that is
@@ -35,14 +35,14 @@ own invariants and partition campaigns. See
 Start your own from a working skeleton:
 
 ```bash
-go run ./cmd/hyperion new mysystem && cd mysystem && go mod tidy && go test ./... -v
+go run ./cmd/promtact new mysystem && cd mysystem && go mod tidy && go test ./... -v
 ```
 
 Every command lives behind one umbrella binary. Commands needing kernel
 facilities a build cannot reach are absent rather than listed and failing.
 
 ```bash
-go run ./cmd/hyperion help
+go run ./cmd/promtact help
 ```
 
 ## What you can build with it
@@ -99,7 +99,7 @@ by identifier. The peer list is derived from the file, so the processes cannot
 disagree about who the members are.
 
 ```bash
-go run ./cmd/hyperiond -config examples/cluster.json -id 3
+go run ./cmd/promtactd -config examples/cluster.json -id 3
 ```
 
 The extracted engine is verified against the simulator these gates qualified:
@@ -138,12 +138,12 @@ and commands are in [benchmarks/sentinel-block-device-2026-07-28.md](benchmarks/
 Linux capability and integration gates:
 
 ```bash
-go run ./cmd/hyperion probe -entries 32
-HYPERION_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal -count=1 -v
-go run ./cmd/hyperion verify -json
+go run ./cmd/promtact probe -entries 32
+PROMTACT_URING_INTEGRATION=1 go test ./storage/uring ./storage/uringwal -count=1 -v
+go run ./cmd/promtact verify -json
 ```
 
-The chaos controller must be used only with its dedicated `hyperion-*`
+The chaos controller must be used only with its dedicated `promtact-*`
 namespace and veth pair. Never attach development fault policies to a management
 interface. See [bpf/README.md](bpf/README.md).
 
@@ -204,13 +204,13 @@ Apache rather than MIT for the express patent grant and its retaliation clause,
 which matter more for a project touching `io_uring`, eBPF, and consensus than
 copyleft would.
 
-## Renamed from HYPERION-DST
+## Earlier names
 
-The project was `HYPERION-DST` through `v0.1.1`, when deterministic simulation
-testing was its defining feature. It now drives any protocol, so the suffix
-described the wrong thing.
+This project was called `HYPERION-DST` through `v0.1.1`, then `Hyperion` for
+`v0.2.x`. Both names described what it was at the time: first a deterministic
+simulation testing harness, then a framework that had outgrown the suffix.
 
-The module path is `github.com/hunterinvariants/hyperion` from `v0.2.0` on.
-GitHub redirects the old repository URL, but the old module path does not
-resolve to the new one — update imports rather than relying on a redirect.
-Releases `v0.1.0` and `v0.1.1` remain published under the old name.
+**Use `github.com/hunterinvariants/promtact` from `v0.3.0` on.** Nothing older
+resolves to it. GitHub redirects the repository URL, but a Go module path is not
+a redirect — imports have to be updated. Releases before `v0.3.0` stay published
+under their original names and are not maintained.

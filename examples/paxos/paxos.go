@@ -1,5 +1,5 @@
 // Package paxos is a worked example of driving a protocol that is not Raft
-// through the Hyperion deterministic engine.
+// through the Promtact deterministic engine.
 //
 // It implements single-decree Paxos: proposers try to get one value chosen,
 // and the safety property is that no two different values are ever chosen, no

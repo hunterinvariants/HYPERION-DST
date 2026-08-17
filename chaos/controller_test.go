@@ -22,19 +22,19 @@ func (f *fakeRunner) Run(_ context.Context, name string, args ...string) error {
 
 func TestRejectsHostInterfaceNames(t *testing.T) {
 	_, err := New(Plan{
-		Namespace: "hyperion-test", HostVeth: "eth0",
-		PeerVeth: "hyperion-peer", BPFObject: "chaos.o",
+		Namespace: "promtact-test", HostVeth: "eth0",
+		PeerVeth: "promtact-peer", BPFObject: "chaos.o",
 	}, &fakeRunner{})
 	if err == nil {
-		t.Fatal("accepted non-Hyperion host interface")
+		t.Fatal("accepted non-Promtact host interface")
 	}
 }
 
 func TestFailureAlwaysRunsNamespaceCleanup(t *testing.T) {
 	runner := &fakeRunner{failAt: 4}
 	controller, err := New(Plan{
-		Namespace: "hyperion-test", HostVeth: "hyperion-host",
-		PeerVeth: "hyperion-peer", BPFObject: "chaos.o",
+		Namespace: "promtact-test", HostVeth: "promtact-host",
+		PeerVeth: "promtact-peer", BPFObject: "chaos.o",
 	}, runner)
 	if err != nil {
 		t.Fatal(err)
@@ -43,8 +43,8 @@ func TestFailureAlwaysRunsNamespaceCleanup(t *testing.T) {
 		t.Fatal("expected injected failure")
 	}
 	joined := strings.Join(runner.calls, "\n")
-	if !strings.Contains(joined, "ip netns del hyperion-test") ||
-		!strings.Contains(joined, "ip link del hyperion-host") {
+	if !strings.Contains(joined, "ip netns del promtact-test") ||
+		!strings.Contains(joined, "ip link del promtact-host") {
 		t.Fatalf("cleanup missing:\n%s", joined)
 	}
 }

@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/promtact/dst"
 )
 
 // MaxNodes is the cluster size ceiling. Node identity is carried in a 64-bit

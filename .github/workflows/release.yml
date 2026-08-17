@@ -25,7 +25,7 @@ jobs:
           cache: false
       - run: go vet ./...
       - run: go test ./... -race -count=1
-      - run: go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+      - run: go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000
       # Blocking here, unlike in the nightly: shipping signed binaries built
       # with a toolchain that has a known reachable vulnerability is the one
       # case where stopping is clearly right.
@@ -55,11 +55,11 @@ jobs:
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
             os="${target%/*}"
             arch="${target#*/}"
-            name="hyperion-${version}-${os}-${arch}"
+            name="promtact-${version}-${os}-${arch}"
             binary="dist/${name}"
             if [ "$os" = "windows" ]; then binary="${binary}.exe"; fi
             GOOS="$os" GOARCH="$arch" go build -trimpath \
-              -ldflags "-s -w" -o "$binary" ./cmd/hyperion
+              -ldflags "-s -w" -o "$binary" ./cmd/promtact
           done
           ls -l dist
 
@@ -80,7 +80,7 @@ jobs:
         with:
           path: .
           format: spdx-json
-          output-file: dist/hyperion-${{ github.ref_name }}.spdx.json
+          output-file: dist/promtact-${{ github.ref_name }}.spdx.json
           upload-artifact: false
           upload-release-assets: false
 
@@ -89,7 +89,7 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v3
         with:
-          subject-path: dist/hyperion-*
+          subject-path: dist/promtact-*
 
       - name: Publish
         env:
@@ -97,4 +97,4 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" dist/* \
             --title "${GITHUB_REF_NAME}" \
-            --notes "Binaries are the hyperion umbrella command. Verify with SHA256SUMS, and with \`gh attestation verify\` against this repository. See docs/API.md for what is contractual at this version."
+            --notes "Binaries are the promtact umbrella command. Verify with SHA256SUMS, and with \`gh attestation verify\` against this repository. See docs/API.md for what is contractual at this version."

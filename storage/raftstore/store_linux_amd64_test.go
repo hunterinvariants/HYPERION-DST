@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/storage/uringwal"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/storage/uringwal"
 )
 
 func TestIOUringSnapshotCompactionRecovery(t *testing.T) {
-	if os.Getenv("HYPERION_URING_INTEGRATION") != "1" {
-		t.Skip("set HYPERION_URING_INTEGRATION=1 on a supported Linux host")
+	if os.Getenv("PROMTACT_URING_INTEGRATION") != "1" {
+		t.Skip("set PROMTACT_URING_INTEGRATION=1 on a supported Linux host")
 	}
 	dir := t.TempDir()
 	walPath := filepath.Join(dir, "node.wal")

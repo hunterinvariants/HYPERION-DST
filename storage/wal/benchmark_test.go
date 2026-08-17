@@ -3,7 +3,7 @@ package wal
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/storage"
+	"github.com/hunterinvariants/promtact/storage"
 )
 
 func BenchmarkEncode(b *testing.B) {

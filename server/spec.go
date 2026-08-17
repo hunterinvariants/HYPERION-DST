@@ -181,7 +181,7 @@ func (s Spec) ConfigFor(id uint32) (Config, error) {
 		RequestTimeout:  timeout,
 		SnapshotEntries: s.SnapshotEntries,
 	}
-	// Defaults match the historical flag defaults of hyperiond, so a file that
+	// Defaults match the historical flag defaults of promtactd, so a file that
 	// omits a field starts the node the same way the flags did.
 	if config.TickInterval == 0 {
 		config.TickInterval = 50 * time.Millisecond

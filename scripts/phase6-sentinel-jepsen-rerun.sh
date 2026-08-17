@@ -14,6 +14,6 @@ fi
 
 cd "$ROOT"
 echo "phase6-jepsen-rerun commit=$(git rev-parse HEAD)"
-HYPERION_KILL_SIGNAL=KILL bash scripts/phase5-sentinel-cluster.sh
+PROMTACT_KILL_SIGNAL=KILL bash scripts/phase5-sentinel-cluster.sh
 sha256sum "$OUT/gate.log" > "$OUT/SHA256SUMS"
 echo "phase6-sentinel-jepsen-rerun PASS evidence=$OUT"

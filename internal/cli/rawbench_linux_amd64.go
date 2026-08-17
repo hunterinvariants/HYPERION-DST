@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/storage/uring"
+	"github.com/hunterinvariants/promtact/storage/uring"
 )
 
 const blockSize = uring.DefaultAlignment
@@ -30,7 +30,7 @@ func rawBenchCommand() Command {
 }
 
 func runRawBench(args []string) int {
-	flags := flag.NewFlagSet("hyperion-raw-bench", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact-raw-bench", flag.ExitOnError)
 	deviceFlag := flags.String("device", "", "dedicated disposable block device")
 	confirm := flags.String("confirm-destroy", "", "must equal ERASE:<canonical-device>")
 	expectedSize := flags.Uint64("expected-size", 0, "required exact device size in bytes")
@@ -77,7 +77,7 @@ func runRawBench(args []string) int {
 	defer writer.Close()
 
 	payload := make([]byte, 48)
-	copy(payload, "Hyperion-RAW-BENCH")
+	copy(payload, "Promtact-RAW-BENCH")
 	latencies := make([]time.Duration, 0, *operations)
 	started := time.Now()
 	for operation := 0; operation < *operations; operation++ {

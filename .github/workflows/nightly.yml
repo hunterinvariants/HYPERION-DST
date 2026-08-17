@@ -32,7 +32,7 @@ jobs:
       # suite under -race on every push, and -race would roughly triple this.
       - name: Equivalence and fault campaigns at 1000 seeds
         env:
-          HYPERION_EQUIV_SEEDS: "1000"
+          PROMTACT_EQUIV_SEEDS: "1000"
         run: >
           go test ./dst/... -count=1 -timeout 25m -v
           -run 'TestEngineMatchesFrozenSimulator|TestEquivalenceComparisonHasTeeth|TestSafetyInvariantsHoldUnderFaults|TestMajorityElectsANewLeader|TestAsymmetricLink'
@@ -40,10 +40,10 @@ jobs:
       # ci.yml already sweeps seeds 1..1000 at 1,000 steps on every push. This
       # covers ground that run does not reach rather than repeating it.
       - name: Extended deterministic seed sweep
-        run: go run ./cmd/hyperion-seeds -from 1001 -to 6000 -steps 2000
+        run: go run ./cmd/promtact-seeds -from 1001 -to 6000 -steps 2000
 
       - name: Declared scenario
-        run: go run ./cmd/hyperion simulate -config examples/leader-partition.json
+        run: go run ./cmd/promtact simulate -config examples/leader-partition.json
 
       # The module has no dependencies, so this checks the Go toolchain for
       # known vulnerabilities. It belongs here rather than on every push: a

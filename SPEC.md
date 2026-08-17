@@ -1,4 +1,4 @@
-# Hyperion safety specification
+# Promtact safety specification
 
 ## Model
 

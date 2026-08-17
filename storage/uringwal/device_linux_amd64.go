@@ -11,8 +11,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/hunterinvariants/hyperion/storage/uring"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/storage/uring"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 const BlockSize = uring.DefaultAlignment

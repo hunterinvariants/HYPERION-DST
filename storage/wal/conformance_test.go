@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/storage/storagetest"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/storage/storagetest"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 func TestMemoryDeviceConformance(t *testing.T) {

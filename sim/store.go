@@ -1,8 +1,8 @@
 package sim
 
 import (
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/storage/raftwal"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/storage/raftwal"
 )
 
 // stableStore keeps simulator snapshots in deterministic memory while the WAL

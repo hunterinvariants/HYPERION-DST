@@ -1,4 +1,4 @@
-# Hyperion evidence
+# Promtact evidence
 
 Status: **Specification & Qualification Complete**
 
@@ -29,7 +29,7 @@ alters a result above it. They carry their own gate evidence:
 | Deterministic engine | 7,000 paired runs compare `dst.Engine` against the qualified `sim.Simulator` at every tick and require a bit-identical execution | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
 | Invariants and faults | packaged Raft properties, leader partition, and one-way link failure hold across 1,000 seeds each | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
 | Storage conformance | `MemoryDevice` and `FileDevice` pass the ten `wal.Device` properties | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
-| Command extraction | seven binaries compared byte-for-byte against their pre-extraction builds, including the `chaos` and `raw-bench` refusal paths; Phase 5 cluster gate re-run for `hyperiond` | [Command extraction](benchmarks/sentinel-hyperion-cli-2026-08-16.md) |
+| Command extraction | seven binaries compared byte-for-byte against their pre-extraction builds, including the `chaos` and `raw-bench` refusal paths; Phase 5 cluster gate re-run for `promtactd` | [Command extraction](benchmarks/sentinel-promtact-cli-2026-08-16.md) |
 
 Each report states explicitly what its run does not establish. The engine
 equivalence is a relative comparison between two implementations on one host,
@@ -64,7 +64,7 @@ complete network loss to an isolated node. The final checker result was:
 ```
 
 Recorded result:
-`jepsen/store/hyperion-live-linearizability/20260728T045906.512+0200/results.edn`.
+`jepsen/store/promtact-live-linearizability/20260728T045906.512+0200/results.edn`.
 
 Knossos is the checker actually used by this repository; no Porcupine result is
 claimed.

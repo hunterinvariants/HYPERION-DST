@@ -1,7 +1,7 @@
-// Package cli holds one implementation per Hyperion command.
+// Package cli holds one implementation per Promtact command.
 //
 // Each command exists once here and is reachable two ways: through its
-// historical standalone binary under cmd/, and as a subcommand of the hyperion
+// historical standalone binary under cmd/, and as a subcommand of the promtact
 // umbrella command. The standalone binaries keep their names, flags, output,
 // and exit codes, because the recorded qualification gates invoke them by name.
 package cli

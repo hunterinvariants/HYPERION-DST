@@ -14,5 +14,5 @@ fi
 printf '%s  %s\n' "$SHA1" "$TOOLS" | sha1sum --check -
 exec java -XX:+UseParallelGC -cp "$TOOLS" tlc2.TLC \
   -cleanup -workers auto \
-  -config "$ROOT/verification/tla/HyperionRaft.cfg" \
-  "$ROOT/verification/tla/HyperionRaft.tla"
+  -config "$ROOT/verification/tla/PromtactRaft.cfg" \
+  "$ROOT/verification/tla/PromtactRaft.tla"

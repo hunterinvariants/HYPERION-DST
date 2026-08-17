@@ -21,7 +21,7 @@ If you changed anything under `dst/`, also run the wide sweep. It is the gate
 that catches a scheduling or protocol change that the default seed count misses:
 
 ```bash
-HYPERION_EQUIV_SEEDS=1000 go test ./dst/... -count=1
+PROMTACT_EQUIV_SEEDS=1000 go test ./dst/... -count=1
 ```
 
 The race detector needs cgo. On Windows without a C toolchain it cannot run at
@@ -77,7 +77,7 @@ measurement that shows it rather than editing it.
 `sim` is retained deliberately. It is the reference the equivalence campaigns
 compare `dst` against; removing it removes the gate.
 
-The safety guards in `chaos` — the mandatory `hyperion-*` namespace, the CIDR
+The safety guards in `chaos` — the mandatory `promtact-*` namespace, the CIDR
 validation, the bounded delay and loss — are not extension points. They stand
 between a test and a broken production network.
 

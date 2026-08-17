@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/promtact/raft"
 )
 
 func TestFrameRoundTripAndChecksum(t *testing.T) {

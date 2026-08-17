@@ -3,7 +3,7 @@ package dst_test
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/promtact/dst"
 )
 
 // TestNoInjectorLeavesTheScheduleUnchanged is the compatibility guarantee: the

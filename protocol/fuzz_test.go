@@ -5,7 +5,7 @@ import (
 	"hash/crc32"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/promtact/raft"
 )
 
 // These targets cover the only path by which bytes chosen by someone else

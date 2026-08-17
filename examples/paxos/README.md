@@ -1,4 +1,4 @@
-# Single-decree Paxos on the Hyperion engine
+# Single-decree Paxos on the Promtact engine
 
 A complete, self-contained example of driving a protocol that is **not Raft**
 through `dst`. Roughly 250 lines of protocol and 60 lines of wiring.
@@ -78,7 +78,7 @@ This is the part worth copying, more than the protocol:
 ## The scenario format is not Raft-specific
 
 `scenario.json` is parsed by `dst/scenario`, the same package the Raft
-`hyperion simulate` command uses. Only the runner differs, and for this
+`promtact simulate` command uses. Only the runner differs, and for this
 protocol it is about twenty lines — see `TestScenarioFileDrivesPaxos`.
 
 ## What this example is not

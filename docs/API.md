@@ -74,13 +74,13 @@ be restructured without it being an API change.
 
 ## The command line is also an interface
 
-`cmd/hyperion` and the nine standalone binaries have contractual **flags and
+`cmd/promtact` and the nine standalone binaries have contractual **flags and
 exit codes**, because `scripts/*.sh`, `.github/workflows/ci.yml`, and the
 recorded evidence in `benchmarks/` invoke them by name and branch on their
 status. Output format is not contractual, with one exception: the final status
-line of `hyperion-seeds` is quoted in evidence documents.
+line of `promtact-seeds` is quoted in evidence documents.
 
-`simulate` and `verify` exist only as subcommands of `hyperion`. They are newer
+`simulate` and `verify` exist only as subcommands of `promtact`. They are newer
 than the extraction, nothing historical refers to them, and a new command does
 not need a standalone binary to keep a promise nobody made.
 
@@ -106,13 +106,13 @@ anything until the tagged commit passes `go vet`, the full race suite, and the
 1,000-seed sweep, because a release that skipped its gates would be the kind of
 unbacked claim this repository exists to avoid.
 
-It then builds the `hyperion` umbrella binary for linux, darwin, and windows on
+It then builds the `promtact` umbrella binary for linux, darwin, and windows on
 amd64 and arm64, writes `SHA256SUMS`, generates an SPDX bill of materials, and
 records a Sigstore build attestation with the workflow's own OIDC identity —
 there is no signing key to store or leak.
 
 ```bash
-gh attestation verify hyperion-v0.1.0-linux-amd64 --repo hunterinvariants/hyperion
+gh attestation verify promtact-v0.1.0-linux-amd64 --repo hunterinvariants/promtact
 sha256sum -c SHA256SUMS
 ```
 

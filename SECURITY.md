@@ -24,10 +24,10 @@ The parts where someone else's bytes or privileges are involved:
 - **The durable format.** `storage/wal` parses records and recovers torn tails
   from disk. Relevant if a node can be made to accept a crafted log.
 - **The chaos controller.** `chaos` runs privileged network commands. The
-  guards — the mandatory `hyperion-*` namespace, the CIDR validation, the
+  guards — the mandatory `promtact-*` namespace, the CIDR validation, the
   bounded delay and loss — exist so that a mistake cannot reach a real
   interface. A way around any of them is a real finding.
-- **The raw block-device benchmark.** `hyperion raw-bench` refuses to write
+- **The raw block-device benchmark.** `promtact raw-bench` refuses to write
   without a canonical `/dev/` path, an exact expected size, and an explicit
   `ERASE:` confirmation. A way to make it write to the wrong device is a real
   finding.
@@ -36,7 +36,7 @@ The parts where someone else's bytes or privileges are involved:
 
 ## What is not a vulnerability
 
-- **The placeholder protocol in `hyperion new`.** It is deliberately unsafe
+- **The placeholder protocol in `promtact new`.** It is deliberately unsafe
   when two nodes propose at once, and the generated test suite requires the
   engine to catch it. That is the lesson, not a defect.
 - **Running the chaos controller against a real interface.** It refuses by

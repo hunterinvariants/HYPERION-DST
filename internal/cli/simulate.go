@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hunterinvariants/hyperion/dst"
-	"github.com/hunterinvariants/hyperion/dst/raftcluster"
-	"github.com/hunterinvariants/hyperion/dst/scenario"
-	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/raftcluster"
+	"github.com/hunterinvariants/promtact/dst/scenario"
+	"github.com/hunterinvariants/promtact/raft"
 )
 
 func simulateCommand() Command {
@@ -20,7 +20,7 @@ func simulateCommand() Command {
 }
 
 func runSimulate(args []string) int {
-	flags := flag.NewFlagSet("hyperion simulate", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact simulate", flag.ExitOnError)
 	path := flags.String("config", "", "scenario file")
 	_ = flags.Parse(args)
 	if *path == "" {

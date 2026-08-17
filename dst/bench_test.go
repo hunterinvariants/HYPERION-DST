@@ -3,7 +3,7 @@ package dst_test
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/promtact/dst"
 )
 
 // The scheduling cost is dominated by how many messages are in flight at once,

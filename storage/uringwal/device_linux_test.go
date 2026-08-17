@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/storage"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/storage"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 func TestWALReopenThroughIOUring(t *testing.T) {
-	if os.Getenv("HYPERION_URING_INTEGRATION") != "1" {
-		t.Skip("set HYPERION_URING_INTEGRATION=1 on Linux")
+	if os.Getenv("PROMTACT_URING_INTEGRATION") != "1" {
+		t.Skip("set PROMTACT_URING_INTEGRATION=1 on Linux")
 	}
 	path := filepath.Join(t.TempDir(), "uring.wal")
 	device, err := Open(path, 8)

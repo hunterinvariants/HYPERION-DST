@@ -6,22 +6,22 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
-	"github.com/hunterinvariants/hyperion/dst/raftcluster"
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/sim"
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/raftcluster"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/sim"
 )
 
 // equivalenceSeeds keeps the default CI cost low while allowing a qualification
-// host to widen the sweep via HYPERION_EQUIV_SEEDS.
+// host to widen the sweep via PROMTACT_EQUIV_SEEDS.
 func equivalenceSeeds(t *testing.T) int64 {
-	raw, set := os.LookupEnv("HYPERION_EQUIV_SEEDS")
+	raw, set := os.LookupEnv("PROMTACT_EQUIV_SEEDS")
 	if !set {
 		return 24
 	}
 	seeds, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || seeds < 1 {
-		t.Fatalf("HYPERION_EQUIV_SEEDS must be a positive integer, got %q", raw)
+		t.Fatalf("PROMTACT_EQUIV_SEEDS must be a positive integer, got %q", raw)
 	}
 	return seeds
 }

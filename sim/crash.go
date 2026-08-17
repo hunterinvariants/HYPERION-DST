@@ -3,8 +3,8 @@ package sim
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/storage/raftwal"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/storage/raftwal"
 )
 
 // CrashRestart discards all volatile node and in-flight network state, then

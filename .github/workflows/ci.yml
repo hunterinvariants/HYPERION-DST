@@ -19,5 +19,5 @@ jobs:
       - run: go test ./... -race -count=1
       - run: go vet ./...
       - run: go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
-      - run: go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+      - run: go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000
 

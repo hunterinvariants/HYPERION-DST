@@ -10,15 +10,15 @@ import (
 )
 
 func TestDurableWriterIntegration(t *testing.T) {
-	if os.Getenv("HYPERION_URING_INTEGRATION") != "1" {
-		t.Skip("set HYPERION_URING_INTEGRATION=1 on a Linux filesystem supporting O_DIRECT")
+	if os.Getenv("PROMTACT_URING_INTEGRATION") != "1" {
+		t.Skip("set PROMTACT_URING_INTEGRATION=1 on a Linux filesystem supporting O_DIRECT")
 	}
 	path := filepath.Join(t.TempDir(), "uring-direct.dat")
 	writer, err := OpenDurableWriter(path, 8, DefaultAlignment)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payload := []byte("hyperion-durable")
+	payload := []byte("promtact-durable")
 	if err := writer.AppendDurable(0, payload); err != nil {
 		_ = writer.Close()
 		t.Fatal(err)

@@ -30,7 +30,7 @@ static __always_inline int parse_ipv4(void *data, void *end,
 }
 
 SEC("xdp")
-int hyperion_xdp(struct xdp_md *ctx) {
+int promtact_xdp(struct xdp_md *ctx) {
     void *data = (void *)(long)ctx->data;
     void *end = (void *)(long)ctx->data_end;
     struct iphdr *ip;
@@ -48,7 +48,7 @@ int hyperion_xdp(struct xdp_md *ctx) {
 }
 
 SEC("classifier")
-int hyperion_tc_egress(struct __sk_buff *skb) {
+int promtact_tc_egress(struct __sk_buff *skb) {
     __u32 zero = 0;
     struct fault_policy *p = bpf_map_lookup_elem(&policy, &zero);
     if (!p)

@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	fmt.Fprintln(os.Stderr, "hyperion-chaos requires Linux")
+	fmt.Fprintln(os.Stderr, "promtact-chaos requires Linux")
 	os.Exit(2)
 }

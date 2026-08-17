@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/chaos"
+	"github.com/hunterinvariants/promtact/chaos"
 )
 
 func chaosCommand() Command {
@@ -23,8 +23,8 @@ func chaosCommand() Command {
 }
 
 func runChaos(args []string) int {
-	flags := flag.NewFlagSet("hyperion-chaos", flag.ExitOnError)
-	object := flags.String("bpf-object", "", "compiled hyperion_chaos.bpf.o")
+	flags := flag.NewFlagSet("promtact-chaos", flag.ExitOnError)
+	object := flags.String("bpf-object", "", "compiled promtact_chaos.bpf.o")
 	delay := flags.Duration("delay", 0, "netem delay")
 	loss := flags.Float64("loss", 0, "netem loss percentage")
 	confirm := flags.Bool("yes-really", false, "required safety acknowledgement")
@@ -34,8 +34,8 @@ func runChaos(args []string) int {
 		return 2
 	}
 	plan := chaos.Plan{
-		Namespace: "hyperion-chaos", HostVeth: "hyperion-host",
-		PeerVeth: "hyperion-peer", HostCIDR: "192.0.2.1/30",
+		Namespace: "promtact-chaos", HostVeth: "promtact-host",
+		PeerVeth: "promtact-peer", HostCIDR: "192.0.2.1/30",
 		PeerCIDR: "192.0.2.2/30", BPFObject: *object, Delay: *delay, LossPct: *loss,
 	}
 	controller, err := chaos.New(plan, chaos.ExecRunner{})

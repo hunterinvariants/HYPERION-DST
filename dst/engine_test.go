@@ -3,7 +3,7 @@ package dst_test
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
+	"github.com/hunterinvariants/promtact/dst"
 )
 
 // The ring protocol below is deliberately not Raft. It exists to prove that the

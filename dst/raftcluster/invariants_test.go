@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
-	"github.com/hunterinvariants/hyperion/dst/raftcluster"
-	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/raftcluster"
+	"github.com/hunterinvariants/promtact/raft"
 )
 
 // TestSafetyInvariantsHoldUnderFaults runs the packaged Raft properties against

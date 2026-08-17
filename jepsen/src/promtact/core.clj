@@ -1,4 +1,4 @@
-(ns hyperion.core
+(ns promtact.core
   (:gen-class)
   (:require [clojure.string :as str]
             [jepsen.checker :as checker]
@@ -14,7 +14,7 @@
            (java.util.zip CRC32C)))
 
 (def addresses
-  (delay (vec (str/split (or (System/getenv "HYPERION_CLIENTS")
+  (delay (vec (str/split (or (System/getenv "PROMTACT_CLIENTS")
                               "10.77.0.11:9200,10.77.0.12:9200,10.77.0.13:9200,10.77.0.14:9200,10.77.0.15:9200") #","))))
 
 (defn le-buffer [size]
@@ -80,7 +80,7 @@
         result (.getLong response)]
     {:status status :leader leader :value result}))
 
-(defrecord HyperionClient [node client-id sequence]
+(defrecord PromtactClient [node client-id sequence]
   client/Client
   (open! [this _test node-name]
     (let [index (.indexOf ^java.util.List (:nodes _test) node-name)]
@@ -105,12 +105,12 @@
 (defn read-op [_test _process] {:type :invoke :f :read :value nil})
 (defn write-op [_test _process] {:type :invoke :f :write :value (rand-int 1000000)})
 
-(defn hyperion-test [opts]
+(defn promtact-test [opts]
   (merge tests/noop-test
          opts
-         {:name "hyperion-live-linearizability"
+         {:name "promtact-live-linearizability"
           :nodes [:n1 :n2 :n3 :n4 :n5]
-          :client (HyperionClient. nil nil nil)
+          :client (PromtactClient. nil nil nil)
           :model (model/register)
           :checker (checker/compose {:linearizable (checker/linearizable {:model (model/register)})
                                      :timeline (timeline/html)})
@@ -120,6 +120,6 @@
                             (gen/time-limit (:time-limit opts 60))))}))
 
 (defn -main [& args]
-  (cli/run! (merge (cli/single-test-cmd {:test-fn hyperion-test})
+  (cli/run! (merge (cli/single-test-cmd {:test-fn promtact-test})
                    (cli/serve-cmd))
             args))

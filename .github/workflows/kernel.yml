@@ -5,7 +5,7 @@ on:
     paths:
       - "bpf/**"
       - "chaos/**"
-      - "cmd/hyperion-chaos/**"
+      - "cmd/promtact-chaos/**"
       - "storage/uring/**"
       - ".github/workflows/kernel.yml"
   pull_request:
@@ -25,6 +25,6 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install -y clang llvm libbpf-dev linux-libc-dev
       - run: go test ./chaos ./storage/uring
-      - run: go build ./cmd/hyperion-chaos
-      - run: clang -O2 -g -target bpf -D__TARGET_ARCH_x86 -I/usr/include/$(gcc -dumpmachine) -c bpf/hyperion_chaos.bpf.c -o /tmp/hyperion_chaos.bpf.o
+      - run: go build ./cmd/promtact-chaos
+      - run: clang -O2 -g -target bpf -D__TARGET_ARCH_x86 -I/usr/include/$(gcc -dumpmachine) -c bpf/promtact_chaos.bpf.c -o /tmp/promtact_chaos.bpf.o
 

@@ -15,7 +15,7 @@ echo "phase4-gate go=$(go version)"
 
 go test ./... -race -count=1
 
-HYPERION_URING_INTEGRATION=1 \
+PROMTACT_URING_INTEGRATION=1 \
   go test ./storage/raftstore \
     -run '^TestIOUringSnapshotCompactionRecovery$' \
     -race -count=100

@@ -3,8 +3,8 @@ package raftwal
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 func TestJointConfigurationSurvivesReplay(t *testing.T) {

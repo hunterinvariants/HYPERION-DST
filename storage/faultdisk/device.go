@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 const OneMillion = 1_000_000

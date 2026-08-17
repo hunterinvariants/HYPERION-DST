@@ -22,10 +22,10 @@ clang --version | head -n 1
 bpftool version
 tc -V
 
-echo "== Hyperion =="
+echo "== Promtact =="
 git rev-parse --short HEAD
 go test ./... -count=1
-go run ./cmd/hyperion-probe
-go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+go run ./cmd/promtact-probe
+go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000
 go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
 

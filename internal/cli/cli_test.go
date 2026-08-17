@@ -89,9 +89,9 @@ func TestPlatformCommandsAreAbsentNotFailing(t *testing.T) {
 
 func TestUsageListsEveryCommand(t *testing.T) {
 	var out strings.Builder
-	Usage(&out, "hyperion")
+	Usage(&out, "promtact")
 	text := out.String()
-	if !strings.Contains(text, "usage: hyperion <command> [flags]") {
+	if !strings.Contains(text, "usage: promtact <command> [flags]") {
 		t.Fatalf("usage line missing from:\n%s", text)
 	}
 	for _, command := range Commands() {

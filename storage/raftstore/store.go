@@ -5,10 +5,10 @@ package raftstore
 import (
 	"fmt"
 
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/storage/raftwal"
-	"github.com/hunterinvariants/hyperion/storage/snapshot"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/storage/raftwal"
+	"github.com/hunterinvariants/promtact/storage/snapshot"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 type Recovery struct {

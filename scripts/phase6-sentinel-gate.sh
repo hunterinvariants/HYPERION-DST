@@ -14,11 +14,11 @@ fi
 
 cleanup() {
   set +e
-  pkill -f '/var/tmp/hyperion-phase5\..*/hyperiond' 2>/dev/null
+  pkill -f '/var/tmp/promtact-phase5\..*/promtactd' 2>/dev/null
   for id in 1 2 3 4 5; do
-    ip netns del "hyperion-n$id" 2>/dev/null
+    ip netns del "promtact-n$id" 2>/dev/null
   done
-  ip link del hyperion-br0 2>/dev/null
+  ip link del promtact-br0 2>/dev/null
 }
 trap cleanup EXIT INT TERM
 
@@ -45,7 +45,7 @@ go test ./sim \
 
 # Live five-process campaign includes leader SIGTERM, restart-safe backup,
 # network isolation, continued operations, and Jepsen/Knossos validation.
-HYPERION_KILL_SIGNAL=KILL bash scripts/phase5-sentinel-cluster.sh
+PROMTACT_KILL_SIGNAL=KILL bash scripts/phase5-sentinel-cluster.sh
 
 sha256sum "$OUT/gate.log" > "$OUT/SHA256SUMS"
 echo "phase6-sentinel-gate PASS evidence=$OUT"

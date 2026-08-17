@@ -63,7 +63,7 @@ acceptance gates:
 
 ## Claim policy
 
-Hyperion has completed all six scoped roadmap phases and their recorded
+Promtact has completed all six scoped roadmap phases and their recorded
 acceptance gates. It is a verification-focused reference system, not a turnkey
 managed database service. Claims remain bounded by the checked-in evidence:
 zero-allocation is established only for the measured hot paths, NVMe latency

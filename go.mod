@@ -1,4 +1,4 @@
-module github.com/hunterinvariants/hyperion
+module github.com/hunterinvariants/promtact
 
 go 1.25
 

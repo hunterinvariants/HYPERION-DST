@@ -92,7 +92,7 @@ func TestConfigForAppliesHistoricalDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("config: %v", err)
 	}
-	// These match the flag defaults hyperiond has always had, so a file that
+	// These match the flag defaults promtactd has always had, so a file that
 	// omits a field starts the node the way the flags did.
 	if config.TickInterval != 50*time.Millisecond {
 		t.Errorf("tick interval = %s", config.TickInterval)

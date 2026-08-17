@@ -3,9 +3,9 @@ package raftcluster_test
 import (
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/dst"
-	"github.com/hunterinvariants/hyperion/dst/raftcluster"
-	"github.com/hunterinvariants/hyperion/raft"
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/raftcluster"
+	"github.com/hunterinvariants/promtact/raft"
 )
 
 // TestMajorityElectsANewLeaderWhileTheLeaderIsPartitioned drives the scenario

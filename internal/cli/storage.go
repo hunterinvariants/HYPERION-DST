@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/backup"
-	"github.com/hunterinvariants/hyperion/storage/uring"
+	"github.com/hunterinvariants/promtact/backup"
+	"github.com/hunterinvariants/promtact/storage/uring"
 )
 
 func probeCommand() Command {
@@ -21,7 +21,7 @@ func probeCommand() Command {
 }
 
 func runProbe(args []string) int {
-	flags := flag.NewFlagSet("hyperion-probe", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact-probe", flag.ExitOnError)
 	entries := flags.Uint("entries", 8, "io_uring submission queue entries")
 	_ = flags.Parse(args)
 	if *entries == 0 || *entries > 32768 {
@@ -47,7 +47,7 @@ func backupCommand() Command {
 }
 
 func runBackup(args []string) int {
-	flags := flag.NewFlagSet("hyperion-backup", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact-backup", flag.ExitOnError)
 	mode := flags.String("mode", "create", "create or restore")
 	data := flags.String("data-dir", "", "offline node data directory")
 	image := flags.String("backup-dir", "", "new backup directory")
@@ -62,7 +62,7 @@ func runBackup(args []string) int {
 		err = fmt.Errorf("invalid mode %q", *mode)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "hyperion-backup:", err)
+		fmt.Fprintln(os.Stderr, "promtact-backup:", err)
 		return 1
 	}
 	return 0
@@ -77,8 +77,8 @@ func uringBenchCommand() Command {
 }
 
 func runUringBench(args []string) int {
-	flags := flag.NewFlagSet("hyperion-uring-bench", flag.ExitOnError)
-	path := flags.String("path", "/tmp/hyperion-uring-bench.dat", "dedicated regular test file")
+	flags := flag.NewFlagSet("promtact-uring-bench", flag.ExitOnError)
+	path := flags.String("path", "/tmp/promtact-uring-bench.dat", "dedicated regular test file")
 	operations := flags.Int("operations", 1000, "durable block writes")
 	keep := flags.Bool("keep", false, "keep benchmark file")
 	_ = flags.Parse(args)

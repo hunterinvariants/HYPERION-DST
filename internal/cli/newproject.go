@@ -25,12 +25,12 @@ type templateFile struct {
 }
 
 func runNew(args []string) int {
-	flags := flag.NewFlagSet("hyperion new", flag.ExitOnError)
+	flags := flag.NewFlagSet("promtact new", flag.ExitOnError)
 	module := flags.String("module", "", "module path for go.mod (defaults to the directory name)")
 	_ = flags.Parse(args)
 
 	if flags.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: hyperion new [-module path] <directory>")
+		fmt.Fprintln(os.Stderr, "usage: promtact new [-module path] <directory>")
 		return 2
 	}
 	dir := flags.Arg(0)

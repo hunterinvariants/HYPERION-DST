@@ -11,7 +11,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 // NewDevice constructs a fresh, empty device. The suite calls it once per
@@ -29,7 +29,7 @@ func RunDeviceSuite(t *testing.T, factory NewDevice) {
 	})
 	t.Run("append then sync is durable", func(t *testing.T) {
 		device := factory(t)
-		want := []byte("hyperion durable record")
+		want := []byte("promtact durable record")
 		if err := device.Append(want); err != nil {
 			t.Fatalf("append: %v", err)
 		}

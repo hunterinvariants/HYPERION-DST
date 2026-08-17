@@ -1,4 +1,4 @@
-// Package wal implements Hyperion's checksummed write-ahead log.
+// Package wal implements Promtact's checksummed write-ahead log.
 package wal
 
 import (
@@ -6,7 +6,7 @@ import (
 	"errors"
 	"hash/crc32"
 
-	"github.com/hunterinvariants/hyperion/storage"
+	"github.com/hunterinvariants/promtact/storage"
 )
 
 const (

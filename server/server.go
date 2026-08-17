@@ -13,11 +13,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hunterinvariants/hyperion/protocol"
-	"github.com/hunterinvariants/hyperion/raft"
-	"github.com/hunterinvariants/hyperion/statemachine"
-	"github.com/hunterinvariants/hyperion/storage/raftstore"
-	"github.com/hunterinvariants/hyperion/storage/wal"
+	"github.com/hunterinvariants/promtact/protocol"
+	"github.com/hunterinvariants/promtact/raft"
+	"github.com/hunterinvariants/promtact/statemachine"
+	"github.com/hunterinvariants/promtact/storage/raftstore"
+	"github.com/hunterinvariants/promtact/storage/wal"
 )
 
 type Config struct {
@@ -408,12 +408,12 @@ func (s *Server) serveMetrics(w http.ResponseWriter, _ *http.Request) {
 		name  string
 		value uint64
 	}{
-		{"hyperion_requests_total", s.metrics.Requests.Load()},
-		{"hyperion_committed_total", s.metrics.Committed.Load()},
-		{"hyperion_duplicates_total", s.metrics.Duplicates.Load()},
-		{"hyperion_busy_total", s.metrics.Busy.Load()},
-		{"hyperion_peer_errors_total", s.metrics.PeerErrors.Load()},
-		{"hyperion_commit_index", s.commit.Load()},
+		{"promtact_requests_total", s.metrics.Requests.Load()},
+		{"promtact_committed_total", s.metrics.Committed.Load()},
+		{"promtact_duplicates_total", s.metrics.Duplicates.Load()},
+		{"promtact_busy_total", s.metrics.Busy.Load()},
+		{"promtact_peer_errors_total", s.metrics.PeerErrors.Load()},
+		{"promtact_commit_index", s.commit.Load()},
 	}
 	for _, metric := range values {
 		_, _ = fmt.Fprintln(w, metric.name+" "+strconv.FormatUint(metric.value, 10))
