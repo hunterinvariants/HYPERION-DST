@@ -22,4 +22,9 @@ jobs:
       - run: go vet ./...
       - run: go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
       - run: go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000
+      # The installer is the first thing a stranger runs, and nothing else here
+      # would notice if it stopped parsing. -S error keeps this a correctness
+      # gate rather than a style opinion.
+      - run: bash -n scripts/install.sh
+      - run: shellcheck -S error scripts/install.sh
 

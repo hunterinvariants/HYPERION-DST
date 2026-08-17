@@ -74,16 +74,33 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 The scenario and cluster files the commands read live in the repository, not
 inside the installed binary. Clone it to run the shipped examples.
 
-Or take a built binary from the
-[releases](https://github.com/hunterinvariants/Promtact/releases) — Linux,
-macOS and Windows, amd64 and arm64. Each release also carries `SHA256SUMS`, an
-SPDX bill of materials, and a Sigstore build attestation that names the
-workflow and tag it was built from.
-[SECURITY.md](SECURITY.md#verifying-a-release) has the commands, including the
-one that checks the attestation without a GitHub account.
+Or take a built binary, which needs no Go at all. Releases cover Linux, macOS
+and Windows on amd64 and arm64, and each carries `SHA256SUMS`, an SPDX bill of
+materials, and a Sigstore build attestation naming the workflow and tag that
+produced it.
+
+`scripts/install.sh` does the whole path: it resolves the latest release,
+downloads the binary for your platform, refuses to install it unless the
+checksum matches, verifies the attestation when `gh` 2.49+ and `jq` are
+present, and writes one file to `~/.local/bin`. No root, no system packages.
 
 ```bash
-./promtact-v0.3.5-linux-amd64 version
+git clone https://github.com/hunterinvariants/Promtact.git
+cd Promtact
+less scripts/install.sh
+./scripts/install.sh
+```
+
+Reading it first is the point, which is why there is no one-line pipe from the
+network into a shell. A script you have not read cannot prove anything to you,
+and proving where a binary came from is what this one is for.
+
+Doing it by hand instead, or checking a download you already have, is in
+[SECURITY.md](SECURITY.md#verifying-a-release) — including the attestation
+check that needs no GitHub account.
+
+```bash
+promtact version
 ```
 
 ## Try it in a minute
