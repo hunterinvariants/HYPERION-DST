@@ -103,7 +103,11 @@ Doing it by hand instead, or checking a download you already have, is in
 [SECURITY.md](SECURITY.md#verifying-a-release), including the attestation
 check that needs no GitHub account.
 
+The installer writes to `~/.local/bin`, which a fresh machine does not have on
+`PATH`. It says so when it finishes; this is the same line:
+
 ```bash
+export PATH="$PATH:$HOME/.local/bin"
 promtact version
 ```
 
