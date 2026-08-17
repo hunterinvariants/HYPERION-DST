@@ -18,7 +18,7 @@ Test distributed protocols the way you test pure functions: run your own
 consensus code under deterministic virtual time and injected network faults,
 check invariants after every step, and reproduce any failure from its seed.
 
-A qualified Raft implementation ships as the worked reference — durable
+A qualified Raft implementation ships as the worked reference: durable
 `io_uring` storage, a checksummed WAL, XDP/TC kernel fault injection,
 Jepsen/Knossos linearizability, and a bounded TLA+ model. It is a reference
 system, not a turnkey database.
@@ -31,7 +31,7 @@ checking, or checked-in measurements. Every claim carries its bounds in
 
 - **Go 1.21 or newer** to build a checkout. The `toolchain` directive in
   `go.mod` fetches the release this project pins, so whatever Go your
-  distribution ships is enough — the Go 1.22 on Ubuntu 24.04 switches to
+  distribution ships is enough. The Go 1.22 on Ubuntu 24.04 switches to
   go1.25.13 by itself, with no action from you.
 - **Go 1.25 or newer** to use it as a library in your own module. `go get`
   raises your `go` line to 1.25, and an older toolchain then has nothing to
@@ -96,7 +96,7 @@ network into a shell. A script you have not read cannot prove anything to you,
 and proving where a binary came from is what this one is for.
 
 Doing it by hand instead, or checking a download you already have, is in
-[SECURITY.md](SECURITY.md#verifying-a-release) — including the attestation
+[SECURITY.md](SECURITY.md#verifying-a-release), including the attestation
 check that needs no GitHub account.
 
 ```bash
@@ -118,7 +118,7 @@ because `-race` requires cgo. There is no cgo anywhere else in this project, so
 the plain command above is enough to try it out.
 
 The second command is the point of the project: a complete protocol that is
-**not** Raft — single-decree Paxos — driven through the same engine, with its
+**not** Raft: single-decree Paxos, driven through the same engine, with its
 own invariants and partition campaigns. See
 [examples/paxos](examples/paxos/README.md).
 
@@ -151,7 +151,7 @@ message type, so nothing is boxed and the hot path allocates nothing.
 
 **Your properties.** A `dst.Invariant` is evaluated after every step. A failure
 comes back as a `dst.Violation` carrying the property name, the step, and the
-trace hash — a coordinate you can return to, not a message you have to
+trace hash, a coordinate you can return to, not a message you have to
 reproduce by guesswork.
 
 **Your faults.** `Split`, `Isolate`, one-way `Link` failures, and `During` for
@@ -278,9 +278,9 @@ isolated netns -> XDP / TC / netem -> controlled kernel faults
 
 ## Documentation
 
-- [docs/DEVELOPERS.md](docs/DEVELOPERS.md) — driving your own protocol, properties, faults, and storage;
-- [docs/API.md](docs/API.md) — what is contractual, and what versioning will mean;
-- [CONTRIBUTING.md](CONTRIBUTING.md) — the evidence bar a change has to clear;
+- [docs/DEVELOPERS.md](docs/DEVELOPERS.md), driving your own protocol, properties, faults, and storage;
+- [docs/API.md](docs/API.md), what is contractual, and what versioning will mean;
+- [CONTRIBUTING.md](CONTRIBUTING.md), the evidence bar a change has to clear;
 - [SPEC.md](SPEC.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [EVIDENCE.md](EVIDENCE.md).
 
 The six scoped qualification phases are complete and frozen at the documented
@@ -289,7 +289,7 @@ that record.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). It covers the project, including
+Apache License 2.0, see [LICENSE](LICENSE). It covers the project, including
 earlier releases.
 
 Apache rather than MIT for the express patent grant and its retaliation clause,
@@ -304,5 +304,5 @@ simulation testing harness, then a framework that had outgrown the suffix.
 
 **Use `github.com/hunterinvariants/promtact` from `v0.3.0` on.** Nothing older
 resolves to it. GitHub redirects the repository URL, but a Go module path is not
-a redirect — imports have to be updated. Releases before `v0.3.0` stay published
+a redirect, imports have to be updated. Releases before `v0.3.0` stay published
 under their original names and are not maintained.

@@ -108,7 +108,7 @@ unbacked claim this repository exists to avoid.
 
 It then builds the `promtact` umbrella binary for linux, darwin, and windows on
 amd64 and arm64, writes `SHA256SUMS`, generates an SPDX bill of materials, and
-records a Sigstore build attestation with the workflow's own OIDC identity —
+records a Sigstore build attestation with the workflow's own OIDC identity,
 there is no signing key to store or leak.
 
 ```bash

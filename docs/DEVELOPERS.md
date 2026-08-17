@@ -57,7 +57,7 @@ engine.Run(10_000)
 ```
 
 Two worked examples exist. `examples/paxos` is a complete, self-contained
-protocol that is deliberately **not** Raft — single-decree Paxos, its own
+protocol that is deliberately **not** Raft: single-decree Paxos, with its own
 invariants, its own scenario file, and campaigns that refuse to pass without
 exercising the mechanism that makes it safe. Start there.
 `dst/raftcluster` is the other: it is what this repository's own Raft core
@@ -108,8 +108,8 @@ reproduce by guesswork.
 `Step` and `Run` never evaluate invariants, so adding them to an existing loop
 changes nothing until you opt in.
 
-`raftcluster.SafetyInvariants()` packages the Raft properties — election safety,
-index sanity, committed-prefix agreement — and is a useful shape to copy.
+`raftcluster.SafetyInvariants()` packages the Raft properties, election safety,
+index sanity, committed-prefix agreement, and is a useful shape to copy.
 
 ### Make your invariants fail on purpose
 

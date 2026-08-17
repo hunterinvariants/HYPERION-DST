@@ -96,7 +96,7 @@ Two campaigns exercise it against Raft, 1,000 seeds each:
   closes it must adopt the later term and stop claiming leadership. Safety
   invariants are checked at every step throughout. Pass, 15.92 s.
 - **asymmetric link failure.** Node 1 can hear node 2, but node 2 never hears
-  node 1 — the failure a symmetric partition model cannot express. Safety
+  node 1, the failure a symmetric partition model cannot express. Safety
   invariants hold across 600 ticks with periodic proposals. Pass, 43.59 s.
 
 Both campaigns fail if their fault dropped no message, so neither can pass
@@ -106,7 +106,7 @@ vacuously.
 
 `dst/scenario` parses a run description: seed, cluster size, steps, network
 conditions, proposal and restart cadence, and faults with optional time
-windows. Parsing is strict — an unknown field, an unknown fault type, a node
+windows. Parsing is strict, an unknown field, an unknown fault type, a node
 outside the cluster, a node on both sides of a split, or a backwards window is
 an error, because a scenario that quietly did less than it claimed would
 produce evidence for a campaign that never ran. Fourteen rejection cases are
@@ -194,9 +194,9 @@ evaluated. Each of these has a guard, and none of them fired:
 - The membership campaign fails if the joint configuration is never committed,
   and requires nodes 1 through 3 to end with the final voter mask and an empty
   joint mask.
-- Three mutation tests corrupt exactly the state each invariant protects — two
+- Three mutation tests corrupt exactly the state each invariant protects, two
   leaders in one term, a commit index beyond the log, and a divergent committed
-  entry — and require the matching property to report the violation.
+  entry, and require the matching property to report the violation.
 - Both fault campaigns fail if their injector dropped no message, and the
   partition campaign additionally fails if the majority elected no replacement.
   A fault that silently matched nothing would otherwise let a run report
@@ -233,8 +233,8 @@ invariants would not have noticed its absence.
 
 The fault facility is deterministic and in-process. It shares no code and no
 guarantees with the kernel-level injection in `chaos` and `bpf/`, whose safety
-guards — a dedicated `promtact-*` namespace, validated CIDRs, bounded delay and
-loss — are unchanged and are not extension points.
+guards (a dedicated `promtact-*` namespace, validated CIDRs, bounded delay and
+loss) are unchanged and are not extension points.
 
 The device conformance suite states the properties `wal.Log` relies on. Passing
 it does not establish that a backend is durable on real hardware; that remains

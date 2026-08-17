@@ -25,6 +25,6 @@ jobs:
       # The installer is the first thing a stranger runs, and nothing else here
       # would notice if it stopped parsing. -S error keeps this a correctness
       # gate rather than a style opinion.
-      - run: bash -n scripts/install.sh
-      - run: shellcheck -S error scripts/install.sh
+      - run: bash -n scripts/install.sh scripts/jepsen-linearizability.sh
+      - run: shellcheck -S error scripts/install.sh scripts/jepsen-linearizability.sh
 

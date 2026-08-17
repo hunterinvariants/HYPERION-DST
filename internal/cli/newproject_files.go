@@ -17,7 +17,7 @@ var projectTemplate = []templateFile{
 
 // mainTemplate makes the generated project a program as well as a test suite.
 // Without it the package declares main and has no main function, so go build
-// and go run fail on a freshly generated project while go test succeeds — a
+// and go run fail on a freshly generated project while go test succeeds, a
 // trap that only shows up once someone tries the obvious command.
 const mainTemplate = `package main
 
@@ -94,8 +94,8 @@ func run() error {
 
 // goModTemplate carries a toolchain directive for a reason that only shows up
 // on a machine whose Go is older than this module's. A go line on its own asks
-// for a toolchain named "go1.25", and no such toolchain is published — the
-// releases are go1.25.0, go1.25.13 and so on — so every command in a generated
+// for a toolchain named "go1.25", and no such toolchain is published: the
+// releases are go1.25.0, go1.25.13 and so on. so every command in a generated
 // project fails with "toolchain not available". Naming the patch release makes
 // the switch resolvable, which is what lets somebody with the Go their
 // distribution shipped run the project at all.
@@ -114,8 +114,8 @@ const protocolTemplate = `package main
 // Node is a placeholder protocol: the first value a node hears becomes the
 // value it adopts, and it passes that value on. Replace it with yours.
 //
-// It has a genuine safety property — every node that has adopted must have
-// adopted the same value — and a genuine flaw: the property only holds while a
+// It has a genuine safety property (every node that has adopted must have
+// adopted the same value) and a genuine flaw: the property only holds while a
 // single node proposes. protocol_test.go shows the engine finding that flaw.
 type Node struct {
 	id       uint32

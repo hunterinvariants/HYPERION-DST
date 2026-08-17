@@ -64,7 +64,7 @@ A change that produces measurements records them in `benchmarks/`, naming:
 
 Never write a number into an evidence document before the run that produces it
 has finished. If a measurement contradicts an earlier one, say so in the
-document and explain which is right — several reports here carry withdrawn
+document and explain which is right, several reports here carry withdrawn
 claims for exactly that reason.
 
 ## What not to touch
@@ -77,8 +77,8 @@ measurement that shows it rather than editing it.
 `sim` is retained deliberately. It is the reference the equivalence campaigns
 compare `dst` against; removing it removes the gate.
 
-The safety guards in `chaos` — the mandatory `promtact-*` namespace, the CIDR
-validation, the bounded delay and loss — are not extension points. They stand
+The safety guards in `chaos` (the mandatory `promtact-*` namespace, the CIDR
+validation, the bounded delay and loss) are not extension points. They stand
 between a test and a broken production network.
 
 ## API changes

@@ -28,7 +28,7 @@ curl -fsSLO https://github.com/hunterinvariants/Promtact/releases/download/vX.Y.
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-**The attestation.** This needs `gh` **2.49 or newer** — the `attestation`
+**The attestation.** This needs `gh` **2.49 or newer**: the `attestation`
 subcommand does not exist before that, and the `gh` in Ubuntu 24.04 is 2.45.
 Install a current one from [cli.github.com](https://cli.github.com) rather than
 from your distribution.
@@ -78,8 +78,8 @@ The parts where someone else's bytes or privileges are involved:
 - **The durable format.** `storage/wal` parses records and recovers torn tails
   from disk. Relevant if a node can be made to accept a crafted log.
 - **The chaos controller.** `chaos` runs privileged network commands. The
-  guards — the mandatory `promtact-*` namespace, the CIDR validation, the
-  bounded delay and loss — exist so that a mistake cannot reach a real
+  guards, the mandatory `promtact-*` namespace, the CIDR validation, the
+  bounded delay and loss, exist so that a mistake cannot reach a real
   interface. A way around any of them is a real finding.
 - **The raw block-device benchmark.** `promtact raw-bench` refuses to write
   without a canonical `/dev/` path, an exact expected size, and an explicit
@@ -99,7 +99,7 @@ The parts where someone else's bytes or privileges are involved:
 - **The scope of the correctness claims.** `EVIDENCE.md` states what each
   result establishes and what it does not. A gap that is already documented
   there is a known bound, not a vulnerability. If a documented bound is wrong,
-  that is worth reporting — with the measurement that shows it.
+  that is worth reporting, with the measurement that shows it.
 - **This being a reference implementation.** It is not a production database
   and does not claim to be.
 

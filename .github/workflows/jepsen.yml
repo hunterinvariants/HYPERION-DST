@@ -1,0 +1,66 @@
+name: jepsen
+
+# The linearizability claim was on the front page and in EVIDENCE.md while
+# nothing ran it except a person on one machine. This runs it where anyone can
+# see the result, so that the claim is a property of the code rather than a
+# note about one afternoon.
+#
+# Weekly rather than per-push: it builds a five-node cluster in network
+# namespaces, kills a leader, blackholes another node and asks Knossos to check
+# the recorded history. That is minutes, not seconds, and nothing about it
+# changes between two commits that touch neither the server nor the workload.
+
+on:
+  schedule:
+    # 04:23 UTC on Mondays. An odd minute avoids the queue that forms on the hour.
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+  push:
+    paths:
+      - "jepsen/**"
+      - "server/**"
+      - "cmd/promtactd/**"
+      - "cmd/promtactctl/**"
+      - "scripts/jepsen-linearizability.sh"
+      - ".github/workflows/jepsen.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  linearizability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Leiningen
+        run: |
+          curl -fsSL -o /usr/local/bin/lein \
+            https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+          chmod +x /usr/local/bin/lein
+          lein version
+
+      # A first run downloads Jepsen and its dependencies. Doing it here keeps
+      # a network stall out of the timed workload below.
+      - name: Fetch the Clojure dependencies
+        working-directory: jepsen
+        run: lein deps
+
+      # sudo, because the run creates network namespaces, a bridge and veth
+      # pairs, and applies tc. -E keeps the Go and Java toolchains the earlier
+      # steps put on PATH.
+      - name: Linearizability under leader kill and network loss
+        env:
+          JEPSEN_TIME_LIMIT: "45"
+        run: sudo -E env "PATH=$PATH" ./scripts/jepsen-linearizability.sh

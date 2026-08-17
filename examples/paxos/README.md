@@ -43,7 +43,7 @@ engine.Watch(cluster.SafetyInvariants()...)
 if err := engine.RunChecked(600); err != nil {
     var v *dst.Violation
     errors.As(err, &v)
-    // v.Invariant, v.Step, v.Trace — a reproducible coordinate, not just a message
+    // v.Invariant, v.Step, v.Trace, a reproducible coordinate, not just a message
 }
 ```
 
@@ -79,7 +79,7 @@ This is the part worth copying, more than the protocol:
 
 `scenario.json` is parsed by `dst/scenario`, the same package the Raft
 `promtact simulate` command uses. Only the runner differs, and for this
-protocol it is about twenty lines — see `TestScenarioFileDrivesPaxos`.
+protocol it is about twenty lines, see `TestScenarioFileDrivesPaxos`.
 
 ## What this example is not
 

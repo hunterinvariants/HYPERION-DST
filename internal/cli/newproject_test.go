@@ -16,7 +16,7 @@ import (
 // TestProjectTemplatePinsTheRepositoryToolchain guards a defect that shipped
 // once: the template named a go version and no toolchain, so on a machine
 // whose Go was older than this module's, every command in a generated project
-// died with "toolchain not available" — Go looks for a toolchain called
+// died with "toolchain not available": Go looks for a toolchain called
 // "go1.25", and only patch releases are published. Ubuntu 24.04 ships Go 1.22,
 // which is enough to make that the common case rather than the rare one.
 //

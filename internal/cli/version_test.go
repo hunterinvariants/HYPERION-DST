@@ -11,7 +11,7 @@ import (
 // TestReleaseWorkflowStampsThisVariable guards the one link that can break in
 // silence. The stamp reaches this file through a string in a YAML file, so a
 // renamed package, a renamed variable or a changed module path leaves the build
-// working, the tests passing, and every published binary reporting "(devel)" —
+// working, the tests passing, and every published binary reporting "(devel)",
 // which is exactly the question a downloaded file exists to answer.
 func TestReleaseWorkflowStampsThisVariable(t *testing.T) {
 	root := filepath.Join("..", "..")
