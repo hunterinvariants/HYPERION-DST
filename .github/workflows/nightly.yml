@@ -44,3 +44,15 @@ jobs:
 
       - name: Declared scenario
         run: go run ./cmd/hyperion simulate -config examples/leader-partition.json
+
+      # The module has no dependencies, so this checks the Go toolchain for
+      # known vulnerabilities. It belongs here rather than on every push: a
+      # newly published CVE has nothing to do with the pull request that
+      # happens to run next, and failing that author's build teaches everyone
+      # to ignore a red mark. Nightly finds it within a day, and the release
+      # gate refuses to ship on a vulnerable toolchain.
+      #
+      # Run as a tool so it stays out of go.mod, and unpinned on purpose: a
+      # vulnerability database is only useful current.
+      - name: Known vulnerabilities in the toolchain
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
