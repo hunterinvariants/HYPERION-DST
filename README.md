@@ -41,6 +41,13 @@ checking, or checked-in measurements. Every claim carries its bounds in
   cgo. Nothing else in this project does.
 - **Linux**, for the `io_uring`, eBPF and raw-device commands. On other
   platforms those commands are absent rather than present and failing.
+- **A Java runtime**, only for `promtact verify`. A headless JRE is enough. The
+  TLA+ tools themselves are not something you install: the script downloads
+  `tla2tools.jar` on first use and checks its SHA1 before running it.
+
+```bash
+sudo apt-get install -y default-jre-headless    # or your distribution's JRE
+```
 
 ## Install
 
@@ -215,6 +222,21 @@ disagree about who the members are.
 ```bash
 go run ./cmd/promtactd -config examples/cluster.json -id 3
 ```
+
+That runs in the foreground until you stop it, and one node of five does not
+elect a leader on its own. `examples/cluster.json` puts all five on loopback, so
+a whole cluster is five of those in five terminals, or one line:
+
+```bash
+for id in 1 2 3 4 5; do go run ./cmd/promtactd -config examples/cluster.json -id $id & done
+curl -s http://127.0.0.1:9303/healthz; curl -s http://127.0.0.1:9303/metrics | grep '^promtact_commit_index'
+go run ./cmd/promtactctl -address 127.0.0.1:9203 -operation put -client 1 -request 1 -key 7 -value 42
+go run ./cmd/promtactctl -address 127.0.0.1:9203 -operation get -client 1 -request 2 -key 7
+kill %1 %2 %3 %4 %5
+```
+
+Each node keeps its state under `/var/tmp/promtact/nodeN`, which the file names
+and the process creates. Remove those directories to start from nothing.
 
 The extracted engine is verified against the simulator these gates qualified:
 7,000 paired runs compare the two at every tick and require a bit-identical
