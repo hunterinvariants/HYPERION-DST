@@ -88,9 +88,21 @@ func run() error {
 }
 `
 
+// goModTemplate carries a toolchain directive for a reason that only shows up
+// on a machine whose Go is older than this module's. A go line on its own asks
+// for a toolchain named "go1.25", and no such toolchain is published — the
+// releases are go1.25.0, go1.25.13 and so on — so every command in a generated
+// project fails with "toolchain not available". Naming the patch release makes
+// the switch resolvable, which is what lets somebody with the Go their
+// distribution shipped run the project at all.
+//
+// TestProjectTemplatePinsTheRepositoryToolchain keeps this equal to the
+// repository's own go.mod, so a bump there cannot leave this behind.
 const goModTemplate = `module MODULEPATH
 
 go 1.25
+
+toolchain go1.25.13
 `
 
 const protocolTemplate = `package main

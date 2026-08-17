@@ -19,9 +19,50 @@ The project reports only capabilities backed by executable tests, bounded model
 checking, or checked-in measurements. Every claim carries its bounds in
 [EVIDENCE.md](EVIDENCE.md) and [STATUS.md](STATUS.md).
 
+## Requirements
+
+- **Go 1.21 or newer** to build a checkout. The `toolchain` directive in
+  `go.mod` fetches the release this project pins, so whatever Go your
+  distribution ships is enough — the Go 1.22 on Ubuntu 24.04 switches to
+  go1.25.13 by itself, with no action from you.
+- **Go 1.25 or newer** to use it as a library in your own module. `go get`
+  raises your `go` line to 1.25, and an older toolchain then has nothing to
+  resolve unless you also add `toolchain go1.25.13` to your `go.mod`.
+- **Git**, to clone.
+- **A C compiler**, only for `go test ./... -race`, because `-race` requires
+  cgo. Nothing else in this project does.
+- **Linux**, for the `io_uring`, eBPF and raw-device commands. On other
+  platforms those commands are absent rather than present and failing.
+
+## Install
+
+As a library, to drive your own protocol:
+
+```bash
+go get github.com/hunterinvariants/promtact@latest
+```
+
+As a command, to run scenarios and the gates:
+
+```bash
+go install github.com/hunterinvariants/promtact/cmd/promtact@latest
+```
+
+`go install` writes the binary to `$(go env GOPATH)/bin`, which is not on
+`PATH` on a fresh machine:
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+The scenario and cluster files the commands read live in the repository, not
+inside the installed binary. Clone it to run the shipped examples.
+
 ## Try it in a minute
 
 ```bash
+git clone https://github.com/hunterinvariants/promtact.git
+cd promtact
 go test ./...
 go test ./examples/paxos -v
 go run ./cmd/promtact simulate -config examples/leader-partition.json

@@ -6,11 +6,55 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/hunterinvariants/promtact/dst/scenario"
 )
+
+// TestProjectTemplatePinsTheRepositoryToolchain guards a defect that shipped
+// once: the template named a go version and no toolchain, so on a machine
+// whose Go was older than this module's, every command in a generated project
+// died with "toolchain not available" — Go looks for a toolchain called
+// "go1.25", and only patch releases are published. Ubuntu 24.04 ships Go 1.22,
+// which is enough to make that the common case rather than the rare one.
+//
+// Comparing against the repository's own go.mod rather than a constant is the
+// point: the next security bump moves one file, and this test moves the
+// template with it instead of letting it rot.
+func TestProjectTemplatePinsTheRepositoryToolchain(t *testing.T) {
+	repo, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
+	if err != nil {
+		t.Fatalf("reading the repository go.mod: %v", err)
+	}
+	var template string
+	for _, file := range projectTemplate {
+		if file.name == "go.mod" {
+			template = file.body
+		}
+	}
+	if template == "" {
+		t.Fatal("the template has no go.mod")
+	}
+	for _, directive := range []string{"go", "toolchain"} {
+		pattern := regexp.MustCompile(`(?m)^` + directive + ` (\S+)$`)
+		want := pattern.FindStringSubmatch(string(repo))
+		if want == nil {
+			t.Fatalf("the repository go.mod declares no %s directive", directive)
+		}
+		got := pattern.FindStringSubmatch(template)
+		if got == nil {
+			t.Errorf("the template go.mod declares no %s directive; a generated project "+
+				"will not build on a machine whose Go differs from this one", directive)
+			continue
+		}
+		if got[1] != want[1] {
+			t.Errorf("the template pins %s %s, the repository pins %s %s",
+				directive, got[1], directive, want[1])
+		}
+	}
+}
 
 // TestProjectTemplateIsValidGo catches the failure that would matter most: a
 // template that no longer parses. A generated project that does not compile is
