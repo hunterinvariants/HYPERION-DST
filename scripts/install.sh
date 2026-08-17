@@ -110,14 +110,27 @@ if command -v gh >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   if [ "${major:-0}" -gt 2 ] || { [ "${major:-0}" -eq 2 ] && [ "${minor:-0}" -ge 49 ]; }; then
     # The bundle is public, so this needs no GitHub account. Fetching it
     # explicitly is also what makes the check work without one.
+    # --format json rather than the human output: gh prints its success banner
+    # only to a terminal, so a script reading the plain output sees nothing and
+    # cannot tell a reader what was verified.
     if curl -fsSL "https://api.github.com/repos/$REPO/attestations/sha256:$got" |
          jq -e '.attestations[0].bundle' > bundle.json 2>/dev/null &&
-       gh attestation verify "$binary" --bundle bundle.json --repo "$REPO" >verify.log 2>&1; then
+       gh attestation verify "$binary" --bundle bundle.json --repo "$REPO" \
+         --format json > verify.json 2>verify.err; then
       gh_ok=yes
-      # gh prints nothing when it is not writing to a terminal, so name the
-      # workflow here rather than leaving a silent pass in the output.
-      built=$(sed -n 's/.*Build workflow:\.* *//p' verify.log | head -1)
-      printf '   ok  built by %s\n' "${built:-the release workflow}"
+      built=$(jq -r '.[0].verificationResult.signature.certificate.buildSignerURI // empty' \
+                verify.json 2>/dev/null)
+      # Field names have moved between gh versions, so fall back to finding the
+      # workflow reference anywhere in the document.
+      [ -n "$built" ] || built=$(grep -oE '[^"]*\.github/workflows/[^"]*@refs/[^"]*' verify.json | head -1)
+      built=${built#https://github.com/}
+      if [ -n "$built" ]; then
+        printf '   ok  built by %s\n' "$built"
+      else
+        # Saying this is better than printing a generic phrase that reads like
+        # the workflow was identified when it was not.
+        printf '   ok  signature verified; this script could not read the workflow name from gh\n'
+      fi
     else
       die "the attestation did not verify for $binary
 Nothing was installed. Report this: https://github.com/$REPO/security/advisories/new"
