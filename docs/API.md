@@ -111,10 +111,10 @@ amd64 and arm64, writes `SHA256SUMS`, generates an SPDX bill of materials, and
 records a Sigstore build attestation with the workflow's own OIDC identity,
 there is no signing key to store or leak.
 
-```bash
-gh attestation verify promtact-v0.1.0-linux-amd64 --repo hunterinvariants/promtact
-sha256sum -c SHA256SUMS
-```
+The commands for checking both live in
+[SECURITY.md](../SECURITY.md#verifying-a-release), and only there. Repeating
+them here is how this page came to carry a release that no longer exists and a
+form of the attestation command that asks for a GitHub account.
 
 Only the umbrella binary ships. It reaches every command, and the standalone
 binaries exist for the recorded gate scripts, which build from source.
