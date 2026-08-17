@@ -36,6 +36,7 @@ func Commands() []Command {
 		simCommand(),
 		simulateCommand(),
 		verifyCommand(),
+		versionCommand(),
 		uringBenchCommand(),
 	}
 	all = append(all, platformCommands()...)

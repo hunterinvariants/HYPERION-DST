@@ -58,8 +58,12 @@ jobs:
             name="promtact-${version}-${os}-${arch}"
             binary="dist/${name}"
             if [ "$os" = "windows" ]; then binary="${binary}.exe"; fi
+            # -X stamps the tag into the binary. Without it a downloaded file
+            # cannot say which release it is, and the file name is not
+            # evidence: "promtact version" is what a reader can check.
             GOOS="$os" GOARCH="$arch" go build -trimpath \
-              -ldflags "-s -w" -o "$binary" ./cmd/promtact
+              -ldflags "-s -w -X github.com/hunterinvariants/promtact/internal/cli.version=${version}" \
+              -o "$binary" ./cmd/promtact
           done
           ls -l dist
 

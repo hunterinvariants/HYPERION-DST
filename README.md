@@ -58,6 +58,18 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 The scenario and cluster files the commands read live in the repository, not
 inside the installed binary. Clone it to run the shipped examples.
 
+Or take a built binary from the
+[releases](https://github.com/hunterinvariants/Promtact/releases) — Linux,
+macOS and Windows, amd64 and arm64. Each release also carries `SHA256SUMS`, an
+SPDX bill of materials, and a Sigstore build attestation that names the
+workflow and tag it was built from.
+[SECURITY.md](SECURITY.md#verifying-a-release) has the commands, including the
+one that checks the attestation without a GitHub account.
+
+```bash
+./promtact-v0.3.5-linux-amd64 version
+```
+
 ## Try it in a minute
 
 ```bash

@@ -15,7 +15,7 @@ import (
 // be renamed. "simulate" and "verify" are newer and exist only as subcommands,
 // because nothing historical refers to them.
 func expectedNames() []string {
-	names := []string{"backup", "ctl", "new", "probe", "seeds", "serve", "sim", "simulate", "uring-bench", "verify"}
+	names := []string{"backup", "ctl", "new", "probe", "seeds", "serve", "sim", "simulate", "uring-bench", "verify", "version"}
 	if runtime.GOOS == "linux" {
 		names = append(names, "chaos")
 		if runtime.GOARCH == "amd64" {
