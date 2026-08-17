@@ -7,6 +7,13 @@ on:
   push:
     tags:
       - "v*"
+  # So the published artifact can be re-checked without cutting a release. A
+  # dispatch runs the smoke job alone; gate and build are skipped.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "existing release tag to download and run, for example v0.3.6"
+        required: true
 
 permissions:
   contents: write
@@ -15,6 +22,7 @@ permissions:
 
 jobs:
   gate:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -32,6 +40,7 @@ jobs:
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   build:
+    if: github.event_name == 'push'
     needs: gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -109,6 +118,9 @@ jobs:
   # handed out does. This downloads the published artifact and runs it.
   smoke:
     needs: build
+    # A dispatch skips gate and build, and a skipped dependency would
+    # otherwise skip this job too.
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
     strategy:
       fail-fast: false
       matrix:
@@ -127,19 +139,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          asset="promtact-${GITHUB_REF_NAME}-${{ matrix.asset }}"
-          gh release download "${GITHUB_REF_NAME}" -R "${GITHUB_REPOSITORY}" \
+          version="${{ inputs.version || github.ref_name }}"
+          asset="promtact-${version}-${{ matrix.asset }}"
+          gh release download "$version" -R "${GITHUB_REPOSITORY}" \
             -p "$asset" -p SHA256SUMS
-          shasum -a 256 -c SHA256SUMS --ignore-missing
+          # The windows runner's bash has sha256sum and no shasum; macOS has
+          # only shasum. Picking whichever exists is the same choice
+          # scripts/install.sh already makes, for the same reason.
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum -c SHA256SUMS --ignore-missing
+          else
+            shasum -a 256 -c SHA256SUMS --ignore-missing
+          fi
 
       - name: Run it, and require it to name this release
         shell: bash
         run: |
           set -euo pipefail
-          asset="promtact-${GITHUB_REF_NAME}-${{ matrix.asset }}"
+          version="${{ inputs.version || github.ref_name }}"
+          asset="promtact-${version}-${{ matrix.asset }}"
           chmod +x "$asset" || true
           "./$asset" version
           # A binary that runs but reports the wrong release would pass a plain
           # smoke test, and that is the one thing this artifact exists to answer.
-          "./$asset" version | grep -qx "promtact ${GITHUB_REF_NAME}"
+          "./$asset" version | grep -qx "promtact ${version}"
           "./$asset" help | grep -q "run \"promtact <command> -h\""
