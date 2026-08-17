@@ -45,13 +45,16 @@ checking, or checked-in measurements. Every claim carries its bounds in
 
 ## Install
 
-As a library, to drive your own protocol:
+As a library, to drive your own protocol. `go get` works only inside a module,
+so the first line is for someone starting from an empty directory:
 
 ```bash
+go mod init example.com/yourproject
 go get github.com/hunterinvariants/promtact@latest
 ```
 
-As a command, to run scenarios and the gates:
+As a command, to run scenarios and the gates. This one needs no module and can
+be run from anywhere:
 
 ```bash
 go install github.com/hunterinvariants/promtact/cmd/promtact@latest
