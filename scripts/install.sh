@@ -126,7 +126,13 @@ Nothing was installed. Report this: https://github.com/$REPO/security/advisories
     printf '   skipped: gh %s is older than 2.49 and has no attestation command\n' "${ghver:-?}"
   fi
 else
-  printf '   skipped: needs gh 2.49+ and jq\n'
+  # Naming the tool that is actually missing matters: on a machine that has jq
+  # and not gh, "needs gh and jq" sends the reader to check something that is
+  # already there.
+  missing=""
+  command -v gh >/dev/null 2>&1 || missing="gh 2.49+"
+  command -v jq >/dev/null 2>&1 || missing="${missing:+$missing and }jq"
+  printf '   skipped: %s not installed\n' "$missing"
 fi
 
 if [ "$gh_ok" = no ]; then
