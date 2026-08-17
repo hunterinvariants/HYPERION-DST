@@ -61,7 +61,7 @@ inside the installed binary. Clone it to run the shipped examples.
 ## Try it in a minute
 
 ```bash
-git clone https://github.com/hunterinvariants/promtact.git
+git clone https://github.com/hunterinvariants/Promtact.git
 cd promtact
 go test ./...
 go test ./examples/paxos -v

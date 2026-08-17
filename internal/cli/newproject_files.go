@@ -73,14 +73,18 @@ func run() error {
 		return err
 	}
 
-	adopted := 0
+	// The field counts nodes holding a value, not values held. Printing it as
+	// "adopted" next to a property called "one adopted value" reads like a
+	// violation the run failed to catch, which is the opposite of what a
+	// starter project should teach.
+	adopters := 0
 	for _, id := range cluster.Nodes() {
 		if _, ok := cluster.Node(id).Adopted(); ok {
-			adopted++
+			adopters++
 		}
 	}
-	fmt.Printf("scenario=%q seed=%s nodes=%d steps=%d adopted=%d trace=%s\n",
-		spec.Name, spec.Seed, spec.Nodes, spec.Steps, adopted, engine.TraceHash())
+	fmt.Printf("scenario=%q seed=%s nodes=%d steps=%d adopters=%d trace=%s\n",
+		spec.Name, spec.Seed, spec.Nodes, spec.Steps, adopters, engine.TraceHash())
 	for _, injector := range injectors {
 		fmt.Printf("fault=%q dropped=%d\n", injector.Name(), engine.InjectedDrops()[injector.Name()])
 	}
