@@ -228,12 +228,27 @@ elect a leader on its own. `examples/cluster.json` puts all five on loopback, so
 a whole cluster is five of those in five terminals, or one line:
 
 ```bash
-for id in 1 2 3 4 5; do go run ./cmd/promtactd -config examples/cluster.json -id $id & done
-curl -s http://127.0.0.1:9303/healthz; curl -s http://127.0.0.1:9303/metrics | grep '^promtact_commit_index'
-go run ./cmd/promtactctl -address 127.0.0.1:9203 -operation put -client 1 -request 1 -key 7 -value 42
-go run ./cmd/promtactctl -address 127.0.0.1:9203 -operation get -client 1 -request 2 -key 7
+go build -o /tmp/promtactd ./cmd/promtactd && go build -o /tmp/promtactctl ./cmd/promtactctl
+for id in 1 2 3 4 5; do /tmp/promtactd -config examples/cluster.json -id $id & done
+curl -s http://127.0.0.1:9303/healthz
+```
+
+Only the leader accepts a request. Any other node answers `status=1`, which is
+`StatusNotLeader`, names the leader it knows about, and exits non-zero. That is
+a redirect rather than a failure, and it is why a client tries the members until
+one accepts:
+
+```bash
+for p in 9201 9202 9203 9204 9205; do
+  /tmp/promtactctl -address 127.0.0.1:$p -operation put -client 1 -request 1 -key 7 -value 42 && break
+done
+for p in 9201 9202 9203 9204 9205; do
+  /tmp/promtactctl -address 127.0.0.1:$p -operation get -client 1 -request 2 -key 7 && break
+done
 kill %1 %2 %3 %4 %5
 ```
+
+A successful reply reads `status=0`, and for the read it carries the value back.
 
 Each node keeps its state under `/var/tmp/promtact/nodeN`, which the file names
 and the process creates. Remove those directories to start from nothing.
