@@ -11,7 +11,7 @@ or a finite verification bound.
 |---|---|---|
 | Raft and DST | crash, restart, snapshot, compaction, membership, ReadIndex, and leadership-transfer gates pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
 | Distributed service | five-process failover, backup/restore, bounded backpressure, metrics, and shutdown gates pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
-| Linearizability | Jepsen/Knossos register history reports `valid? true` during process and network faults | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Linearizability | Jepsen/Knossos register history reports `valid? true` during process and network faults, on the qualification host and in CI | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md), [jepsen workflow](.github/workflows/jepsen.yml) |
 | Storage faults | ENOSPC, append EIO, sync EIO, torn writes, bit rot, misdirected writes, phantom reads, and fail-stop ACK rules pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
 | Kernel paths | registered file/buffer, `O_DIRECT`, `WRITE_FIXED`, CQE validation, `FSYNC`, XDP/TC verification, injection, and cleanup pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
 | NVMe | 10,000 raw durable operations pass on the named NVMe device | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
@@ -63,6 +63,18 @@ Recorded result:
 `jepsen/store/promtact-live-linearizability/20260817T172938.145+0200/results.edn`.
 
 Knossos is the checker this repository uses; no Porcupine result is claimed.
+
+The same property is now checked continuously rather than only on the
+qualification host. `.github/workflows/jepsen.yml` builds a five-node cluster in
+network namespaces, kills the leader, applies total loss to a second node, and
+requires Knossos to report a valid history. It runs weekly, on any change to the
+server, the client or the workload, and on demand. Two guards keep a pass from
+being empty: the verdict is read out of the checker's output rather than taken
+from the exit code, and a history with no operations fails.
+
+That run is a shorter workload on a shared runner. It does not replace the
+recorded result above, which remains the qualification evidence; it establishes
+that the property still holds after a change, which one recorded run cannot.
 
 ## TLA+ state-space result
 
