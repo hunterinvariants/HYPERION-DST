@@ -250,6 +250,29 @@ kill %1 %2 %3 %4 %5
 
 A successful reply reads `status=0`, and for the read it carries the value back.
 
+Killing the node that accepted the write is the part worth watching. The other
+four elect a leader without being told to, and the value is still there:
+
+```bash
+kill %1                                  # node 1 was the leader above
+sleep 10
+for p in 9201 9202 9203 9204 9205; do
+  /tmp/promtactctl -address 127.0.0.1:$p -operation get -client 2 -request 3 -key 7 && break
+done
+```
+
+```text
+promtactctl: dial tcp 127.0.0.1:9201: connect: connection refused
+status=1 leader=4 request=3 value=0 commit=3
+status=1 leader=4 request=3 value=0 commit=3
+status=0 leader=4 request=3 value=42 commit=3
+```
+
+The dead node refuses the connection, two survivors redirect to the leader they
+have already agreed on, and the fourth answers with the value. The commit index
+moved from 2 to 3, so the new term appended and committed rather than freezing
+what it inherited.
+
 Each node keeps its state under `/var/tmp/promtact/nodeN`, which the file names
 and the process creates. Remove those directories to start from nothing.
 

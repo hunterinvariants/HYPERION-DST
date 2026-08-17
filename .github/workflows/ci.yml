@@ -8,8 +8,16 @@ permissions:
   contents: read
 
 jobs:
-  go:
-    runs-on: ubuntu-latest
+  # The release ships darwin and windows binaries that nothing had ever built
+  # and run: release.yml cross-compiles them, which proves they link, not that
+  # they work. A platform-specific break would have reached a user before it
+  # reached us.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -20,6 +28,16 @@ jobs:
       # its own rather than being one green step inside a general workflow.
       - run: go test ./... -count=1
       - run: go vet ./...
+
+  # Everything below is either Linux-only or too slow to repeat three times.
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
       - run: go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
       - run: go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000
       # The installer is the first thing a stranger runs, and nothing else here
@@ -27,4 +45,8 @@ jobs:
       # gate rather than a style opinion.
       - run: bash -n scripts/install.sh scripts/jepsen-linearizability.sh
       - run: shellcheck -S error scripts/install.sh scripts/jepsen-linearizability.sh
-
+      # Reported, not badged. Next to bounded model checking and 7,000
+      # equivalence runs, a percentage is the weakest number this project has,
+      # and putting it on the front would say the opposite.
+      - run: go test ./... -coverprofile=cover.out -count=1
+      - run: go tool cover -func=cover.out | tail -1
