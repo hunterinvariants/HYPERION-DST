@@ -1,15 +1,18 @@
 # Promtact
 
-[![ci](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/ci.yml?branch=main&style=flat-square&labelColor=333&label=ci)](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml)
-[![race](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/race.yml?branch=main&style=flat-square&labelColor=333&label=race)](https://github.com/hunterinvariants/Promtact/actions/workflows/race.yml)
-[![formal](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/formal.yml?branch=main&style=flat-square&labelColor=333&label=formal)](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml)
-[![kernel](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/kernel.yml?branch=main&style=flat-square&labelColor=333&label=kernel)](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml)
-[![nightly](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/nightly.yml?branch=main&style=flat-square&labelColor=333&label=nightly)](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml)
-
-[![go](https://img.shields.io/github/go-mod/go-version/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=go)](go.mod)
-[![release](https://img.shields.io/github/v/release/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=release)](https://github.com/hunterinvariants/Promtact/releases)
-[![license](https://img.shields.io/github/license/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=license)](LICENSE)
-[![qualification](https://img.shields.io/badge/qualification-complete-2ca02c?style=flat-square&labelColor=333)](STATUS.md)
+<!-- One row, gates first and facts after, each group ordered by rendered width.
+     Two half-width rows left the right half of the column empty; together they
+     very nearly fill it. height="22" is a 10% scale, enough to close the last
+     gap without the badges looking inflated. -->
+<a href="https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml"><img alt="ci" height="22" src="https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/ci.yml?branch=main&amp;style=flat-square&amp;labelColor=333&amp;label=ci"></a>
+<a href="https://github.com/hunterinvariants/Promtact/actions/workflows/race.yml"><img alt="race" height="22" src="https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/race.yml?branch=main&amp;style=flat-square&amp;labelColor=333&amp;label=race"></a>
+<a href="https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml"><img alt="formal" height="22" src="https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/formal.yml?branch=main&amp;style=flat-square&amp;labelColor=333&amp;label=formal"></a>
+<a href="https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml"><img alt="kernel" height="22" src="https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/kernel.yml?branch=main&amp;style=flat-square&amp;labelColor=333&amp;label=kernel"></a>
+<a href="https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml"><img alt="nightly" height="22" src="https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/nightly.yml?branch=main&amp;style=flat-square&amp;labelColor=333&amp;label=nightly"></a>
+<a href="go.mod"><img alt="go" height="22" src="https://img.shields.io/github/go-mod/go-version/hunterinvariants/Promtact?style=flat-square&amp;labelColor=333&amp;color=2ca02c&amp;label=go"></a>
+<a href="https://github.com/hunterinvariants/Promtact/releases"><img alt="release" height="22" src="https://img.shields.io/github/v/release/hunterinvariants/Promtact?style=flat-square&amp;labelColor=333&amp;color=2ca02c&amp;label=release"></a>
+<a href="LICENSE"><img alt="license" height="22" src="https://img.shields.io/github/license/hunterinvariants/Promtact?style=flat-square&amp;labelColor=333&amp;color=2ca02c&amp;label=license"></a>
+<a href="STATUS.md"><img alt="qualification" height="22" src="https://img.shields.io/badge/qualification-complete-2ca02c?style=flat-square&amp;labelColor=333"></a>
 
 Test distributed protocols the way you test pure functions: run your own
 consensus code under deterministic virtual time and injected network faults,
