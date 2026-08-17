@@ -1,10 +1,15 @@
 # Promtact
 
-[![CI](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml)
-[![Nightly](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml)
-[![Kernel build](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml)
-[![Formal](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml)
-![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
+[![ci](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/ci.yml?branch=main&style=flat-square&labelColor=333&label=ci)](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml)
+[![race](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/race.yml?branch=main&style=flat-square&labelColor=333&label=race)](https://github.com/hunterinvariants/Promtact/actions/workflows/race.yml)
+[![formal](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/formal.yml?branch=main&style=flat-square&labelColor=333&label=formal)](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml)
+[![kernel](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/kernel.yml?branch=main&style=flat-square&labelColor=333&label=kernel)](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml)
+[![nightly](https://img.shields.io/github/actions/workflow/status/hunterinvariants/Promtact/nightly.yml?branch=main&style=flat-square&labelColor=333&label=nightly)](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml)
+
+[![release](https://img.shields.io/github/v/release/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=release)](https://github.com/hunterinvariants/Promtact/releases)
+[![go](https://img.shields.io/github/go-mod/go-version/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=go)](go.mod)
+[![license](https://img.shields.io/github/license/hunterinvariants/Promtact?style=flat-square&labelColor=333&color=2ca02c&label=license)](LICENSE)
+[![specification &amp; qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ca02c?style=flat-square&labelColor=333)](STATUS.md)
 
 Test distributed protocols the way you test pure functions: run your own
 consensus code under deterministic virtual time and injected network faults,

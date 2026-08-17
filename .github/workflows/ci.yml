@@ -16,7 +16,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go test ./... -race -count=1
+      # The race detector runs in race.yml, so that its result has a name of
+      # its own rather than being one green step inside a general workflow.
+      - run: go test ./... -count=1
       - run: go vet ./...
       - run: go test ./storage/wal -run '^$' -bench BenchmarkEncode -benchmem
       - run: go run ./cmd/promtact-seeds -from 1 -to 1000 -steps 1000

@@ -1,0 +1,32 @@
+name: race
+
+# The race suite has its own workflow so that it has its own answer. Run as a
+# step inside ci it was invisible: a green ci badge meant "something passed",
+# and a reader had to open the log to learn whether the data race detector was
+# among it. A badge that cannot be traced to a run is decoration.
+#
+# This is a move, not a duplicate. ci.yml runs the suite without -race; the
+# expensive instrumented pass happens here.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      # -race needs cgo, which is why this cannot run on the Windows
+      # development box and why the README says a C compiler is only needed
+      # for this one command.
+      - run: go test ./... -race -count=1
