@@ -2,54 +2,50 @@
 
 Status: **Specification & Qualification Complete**
 
-This file is the frozen evidence index for the qualified reference baseline.
-Every result is tied to a named configuration or finite verification bound.
+This file is the evidence index. Every result is tied to a named configuration
+or a finite verification bound.
 
 ## Qualification summary
 
 | Area | Result | Evidence |
 |---|---|---|
-| Raft and DST | phases 1-4 complete; crash, restart, snapshot, compaction, membership, ReadIndex, and leadership-transfer gates pass | [Phase 4 Sentinel report](benchmarks/sentinel-phase4-2026-07-28.md) |
-| Distributed service | five-process failover, backup/restore, bounded backpressure, metrics, and shutdown gates pass | [Phase 5 Sentinel report](benchmarks/sentinel-phase5-2026-07-28.md) |
-| Linearizability | Jepsen/Knossos register history reports `valid? true` during process and network faults | [Phase 6 Sentinel report](benchmarks/sentinel-phase6-2026-07-28.md) |
-| Storage faults | ENOSPC, append EIO, sync EIO, torn writes, bit rot, misdirected writes, phantom reads, and fail-stop ACK rules pass | [Phase 6 Sentinel report](benchmarks/sentinel-phase6-2026-07-28.md) |
-| Kernel paths | registered file/buffer, `O_DIRECT`, `WRITE_FIXED`, CQE validation, `FSYNC`, XDP/TC verification, injection, and cleanup pass | [Sentinel block-device report](benchmarks/sentinel-block-device-2026-07-28.md) |
-| NVMe | 10,000 raw durable operations pass on the named GCP Local SSD NVMe configuration | [GCP Local SSD NVMe report](benchmarks/gcp-local-nvme-2026-07-28.md) |
-| Formal model | bounded TLC exploration completes with no invariant violation | [Phase 6 Sentinel report](benchmarks/sentinel-phase6-2026-07-28.md) |
+| Raft and DST | crash, restart, snapshot, compaction, membership, ReadIndex, and leadership-transfer gates pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Distributed service | five-process failover, backup/restore, bounded backpressure, metrics, and shutdown gates pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Linearizability | Jepsen/Knossos register history reports `valid? true` during process and network faults | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Storage faults | ENOSPC, append EIO, sync EIO, torn writes, bit rot, misdirected writes, phantom reads, and fail-stop ACK rules pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Kernel paths | registered file/buffer, `O_DIRECT`, `WRITE_FIXED`, CQE validation, `FSYNC`, XDP/TC verification, injection, and cleanup pass | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| NVMe | 10,000 raw durable operations pass on the named NVMe device | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
+| Formal model | bounded TLC exploration completes with no invariant violation | [Sentinel qualification run](benchmarks/sentinel-2026-08-17.md) |
 
 ## Framework evidence
 
 The engine, its invariants, its fault injection, the scenario format, and the
-command extraction were built after the phases above and are **not** part of
-any roadmap phase. They claim no phase acceptance, and nothing in this section
-alters a result above it. They carry their own gate evidence:
+storage conformance suite sit on top of the consensus core and are not part of
+any roadmap phase. They claim no phase acceptance and carry their own gate
+evidence:
 
 | Area | Result | Evidence |
 |---|---|---|
-| Deterministic engine | 7,000 paired runs compare `dst.Engine` against the qualified `sim.Simulator` at every tick and require a bit-identical execution | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
-| Invariants and faults | packaged Raft properties, leader partition, and one-way link failure hold across 1,000 seeds each | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
-| Storage conformance | `MemoryDevice` and `FileDevice` pass the ten `wal.Device` properties | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-16.md) |
-| Command extraction | seven binaries compared byte-for-byte against their pre-extraction builds, including the `chaos` and `raw-bench` refusal paths; Phase 5 cluster gate re-run for `promtactd` | [Command extraction](benchmarks/sentinel-promtact-cli-2026-08-16.md) |
+| Deterministic engine | 7,000 paired runs compare `dst.Engine` against `sim.Simulator` at every tick and require a bit-identical execution | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-17.md) |
+| Invariants and faults | packaged Raft properties, leader partition, and one-way link failure hold across 1,000 seeds each | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-17.md) |
+| Storage conformance | `MemoryDevice` and `FileDevice` pass the ten `wal.Device` properties | [Engine qualification](benchmarks/sentinel-dst-engine-2026-08-17.md) |
 
-Each report states explicitly what its run does not establish. The engine
-equivalence is a relative comparison between two implementations on one host,
-not a claim about cross-platform trace stability; the invariants are safety
-properties only, with no liveness property checked.
+The engine equivalence is a comparison between two implementations on one host;
+it establishes nothing about cross-platform trace stability. The invariants are
+safety properties, with no liveness property checked.
 
 ## NVMe result
 
-Configuration: GCP `n2-custom-4-12288`, Ubuntu 24.04.4 LTS, kernel
-`6.17.0-1021-gcp`, `/dev/nvme0n1`, 4 KiB blocks, registered io_uring
-file/buffer, `O_DIRECT`, `WRITE_FIXED`, CQE validation, and one completed
-`FSYNC` per operation.
+Configuration: Ubuntu 24.04.4 LTS, kernel `6.8.0-137-generic`, `/dev/nvme0n1`
+at 20 GiB, 4 KiB blocks, registered io_uring file and buffer, `O_DIRECT`,
+`WRITE_FIXED`, CQE validation, and one completed `FSYNC` per operation.
 
 | Operations | Throughput | p50 | p99 | Maximum |
 |---:|---:|---:|---:|---:|
-| 10,000 | 10,132 ops/s | 95.074 us | 132.080 us | 551.414 us |
+| 10,000 | 7,971 ops/s | 117.207 us | 196.343 us | 13.668893 ms |
 
-SMART reported no critical warning, media error, or error-log entry before or
-after the run. These numbers describe this GCP Local SSD configuration; they
-are not generalized hardware claims.
+These numbers describe this device in this machine; they are not generalized
+hardware claims.
 
 ## Linearizability result
 
@@ -64,14 +60,13 @@ complete network loss to an isolated node. The final checker result was:
 ```
 
 Recorded result:
-`jepsen/store/promtact-live-linearizability/20260728T045906.512+0200/results.edn`.
+`jepsen/store/promtact-live-linearizability/20260817T172938.145+0200/results.edn`.
 
-Knossos is the checker actually used by this repository; no Porcupine result is
-claimed.
+Knossos is the checker this repository uses; no Porcupine result is claimed.
 
 ## TLA+ state-space result
 
-TLC 2.19 exhaustively explored the configured finite model:
+TLC exhaustively explored the configured finite model:
 
 | Bound or result | Value |
 |---|---:|
@@ -85,28 +80,25 @@ TLC 2.19 exhaustively explored the configured finite model:
 | Invariant violations | 0 |
 
 Modeled transitions include durable election, AppendEntries replication,
-current-term commit, compaction, InstallSnapshot, joint/final membership, and
-crash recovery. Checked invariants cover type correctness, election safety,
+current-term commit, compaction, InstallSnapshot, joint and final membership,
+and crash recovery. Checked invariants cover type correctness, election safety,
 committed-prefix safety, snapshot safety, and durable-vote safety.
 
-The depth above is the value from a serial run, which is the reliable one.
-Under `-workers auto` TLC occasionally reports one level more, because a worker
-can reach the next level before the current one closes and TLC keeps the
-maximum seen; re-running this model gave 26, 25, and 25 in parallel against 25
-serially, with identical state counts throughout.
+The depth is the value from a serial run, which is the reliable one: under
+`-workers auto` TLC can report one level more, because a worker may reach the
+next level before the current one closes.
 
-Fingerprint-collision estimates reported by TLC were `1.3E-5` optimistic and
-`3.3E-6` from actual fingerprints. The second figure describes that run rather
-than the model: TLC draws a fresh fingerprint seed each time, and a later run
-of the same model reported `5.6E-7`. This is bounded model checking, not an
+Fingerprint-collision estimates were `1.3E-5` optimistic and `8.3E-7` from the
+actual fingerprints. The second figure is a property of the run, since TLC draws
+a fresh fingerprint seed each time. This is bounded model checking, not an
 unbounded proof.
 
 ## Claim boundary
 
 The repository is a specification-and-qualification-complete reference
-implementation. Zero-allocation applies only to measured hot paths; latency
-applies only to the named configuration; linearizability applies to the
-recorded workload; and formal safety applies to the documented finite bounds.
+implementation. Zero-allocation applies to measured hot paths; latency applies
+to the named configuration; linearizability applies to the recorded workload;
+and formal safety applies to the documented finite bounds.
 
 See [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md),
 [docs/OPERATING-ENVELOPE.md](docs/OPERATING-ENVELOPE.md), and

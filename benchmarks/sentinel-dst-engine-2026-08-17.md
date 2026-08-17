@@ -1,35 +1,29 @@
 # Sentinel deterministic engine qualification
 
-Date: 2026-08-16
+Date: 2026-08-17
 
-Commit under test: the `framework/scheduler-heap` branch head.
+Commit under test: `1d6ba08`.
 
 ## Purpose
 
-The `dst` package extracts the deterministic execution engine — virtual time,
-seeded scheduling, message loss and delay, the execution trace, invariant
-checking, and programmable fault injection — from the Raft-specific simulator
-in `sim`, so that protocols other than Raft can be driven and checked under the
-same conditions. `dst/raftcluster` re-implements the Raft wiring behind the
-engine's `Cluster` and `Wire` interfaces and packages the Raft safety
-properties as reusable invariants. `dst/scenario` makes a run declarable as a
-file.
+The `dst` package is the deterministic execution engine: virtual time, seeded
+scheduling, message loss and delay, the execution trace, invariant checking,
+and programmable fault injection. It carries no protocol state, so protocols
+other than Raft can be driven and checked under the same conditions.
+`dst/raftcluster` wires the Raft core behind the engine's `Cluster` and `Wire`
+interfaces and packages the Raft safety properties as reusable invariants.
+`dst/scenario` makes a run declarable as a file.
 
-The change is additive with respect to the qualified system: `sim`, `raft`,
-`storage/wal`, `storage/raftwal`, `storage/uring`, `protocol`, and `server`
-carry no logic changes, so every previously qualified code path is unchanged.
-This report records the gate run that establishes the package is behaviorally
-identical to the frozen simulator on the qualification host.
+This report records the gate run establishing that the engine drives the Raft
+core identically to `sim.Simulator` on the qualification host.
 
 ## Host
 
-- Linux `sentinel`, kernel `6.8.0-137-generic`, x86_64;
-- Go `go1.25.0 linux/amd64`.
+- Linux `sentinel`, Ubuntu 24.04.4 LTS, kernel `6.8.0-137-generic`, x86_64;
+- Go `go1.25.13 linux/amd64`.
 
-The kernel differs from the `6.8.0-136-generic` recorded for the qualified
-baseline. Every gate in this report is pure Go and issues no `io_uring`,
-`O_DIRECT`, XDP, or TC operation, so the difference does not bear on these
-results. It does bear on any future re-run of the hardware gates.
+Every gate in this report is pure Go and issues no `io_uring`, `O_DIRECT`, XDP,
+or TC operation.
 
 ## Executable qualification
 
@@ -39,16 +33,17 @@ results. It does bear on any future re-run of the hardware gates.
 - engine/simulator equivalence, 7,000 paired runs under `-race`: pass;
 - equivalence negative control: pass;
 - packaged Raft invariants under loss, delay, proposal, and restart, 1,000
-  seeds x 500 ticks: pass, 57.18 s;
+  seeds x 500 ticks: pass, 46.47 s;
 - invariant mutation tests: pass;
-- leader partition and heal, 1,000 seeds: pass, 19.86 s;
-- asymmetric one-way link failure, 1,000 seeds: pass, 40.66 s;
+- leader partition and heal, 1,000 seeds: pass, 15.92 s;
+- asymmetric one-way link failure, 1,000 seeds: pass, 43.59 s;
 - `wal.Device` conformance suite against `MemoryDevice` and `FileDevice`: pass;
-- a declared scenario executed through `hyperion simulate`: pass.
+- a declared scenario executed through `promtact simulate`: pass.
 
 The deterministic seed sweep is not repeated here. It exercises `sim`, and
-`git diff origin/main..HEAD` shows `sim` unmodified on this branch; its last
-recorded result is `PASS seeds=1000 range=1..1000 steps=1000` at `036a3ef`.
+`sim` carries no logic change in this work; its last
+recorded result is `PASS seeds=1000 range=1..1000 steps=1000`, re-run today
+and recorded in `benchmarks/sentinel-2026-08-17.md`.
 
 ## Equivalence method
 
@@ -67,23 +62,21 @@ Seven campaigns ran 1,000 seeds each, for 7,000 paired runs.
 
 | Campaign | Nodes | Steps | Drop | Max delay | Restart | Time |
 |---|---:|---:|---:|---:|---|---:|
-| quiet | 3 | 400 | 0 | 0 | - | 15.04 s |
-| lossy | 5 | 500 | 75 permille | 5 | - | 31.11 s |
-| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 48.42 s |
-| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 44.25 s |
-| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 167.54 s |
-| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 102.14 s |
-| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 46.27 s |
+| quiet | 3 | 400 | 0 | 0 | - | 14.23 s |
+| lossy | 5 | 500 | 75 permille | 5 | - | 33.73 s |
+| seed-sweep-profile | 5 | 600 | 50 permille | 5 | every 101 ticks | 48.41 s |
+| restart-storm | 5 | 500 | 60 permille | 5 | every 37 ticks | 46.56 s |
+| delay-only | 7 | 300 | 0 | 9 | every 71 ticks | 126.58 s |
+| compaction | 5 | 500 + 300 | 35 permille | 4 | all five, after compaction | 75.53 s |
+| membership | 5 | 150 + 600 + 200 | 25 permille | 4 | nodes 1-3, after transition | 39.45 s |
 
 The compaction and membership campaigns mirror the shapes of the qualified
 campaigns in `sim/compaction_test.go` and `sim/membership_test.go`.
 
-Both the invariant facility and the fault facility required modifying
-`dst/engine.go`. `Step` and `Run` are unchanged, and tests pin that registering
-invariants or an always-allowing injector leaves the trace hash identical, but
-the equivalence campaigns above were re-run in full at this commit rather than
-carried over. The `dst/raftcluster` package total for the run was 573.51 s
-under the race detector.
+Tests pin that registering invariants or an always-allowing injector leaves the
+trace hash identical, so neither facility can shift the schedule. The
+`dst/raftcluster` package total for the run was 491.49 s under the race
+detector.
 
 ## Fault injection
 
@@ -101,10 +94,10 @@ Two campaigns exercise it against Raft, 1,000 seeds each:
   strictly later term than the isolated leader held, the isolated node must not
   advance its commit index while it holds a minority, and after the window
   closes it must adopt the later term and stop claiming leadership. Safety
-  invariants are checked at every step throughout. Pass, 19.86 s.
+  invariants are checked at every step throughout. Pass, 15.92 s.
 - **asymmetric link failure.** Node 1 can hear node 2, but node 2 never hears
   node 1 — the failure a symmetric partition model cannot express. Safety
-  invariants hold across 600 ticks with periodic proposals. Pass, 40.66 s.
+  invariants hold across 600 ticks with periodic proposals. Pass, 43.59 s.
 
 Both campaigns fail if their fault dropped no message, so neither can pass
 vacuously.
@@ -240,7 +233,7 @@ invariants would not have noticed its absence.
 
 The fault facility is deterministic and in-process. It shares no code and no
 guarantees with the kernel-level injection in `chaos` and `bpf/`, whose safety
-guards — a dedicated `hyperion-*` namespace, validated CIDRs, bounded delay and
+guards — a dedicated `promtact-*` namespace, validated CIDRs, bounded delay and
 loss — are unchanged and are not extension points.
 
 The device conformance suite states the properties `wal.Log` relies on. Passing
@@ -253,16 +246,14 @@ documented as single-threaded and is not safe for concurrent use.
 
 ## Scheduling cost
 
-The engine's in-flight queue is a binary heap keyed on `(at, seq)`. It replaced
-the linear scan carried over from `sim`, which is retained there and therefore
-still acts as the reference the equivalence campaigns compare against: if the
-heap changed delivery order anywhere, the paired trace hashes would diverge.
-The key is a total order and the element the scan selected is the global
-minimum whenever any message is due, so the orders coincide by construction as
-well as by measurement.
+The engine's in-flight queue is a binary heap keyed on `(at, seq)`. `sim` keeps
+a linear scan over the same queue, which is what the equivalence campaigns
+compare against: if the heap ordered deliveries differently anywhere, the paired
+trace hashes would diverge. The key is a total order and the element a scan
+selects is the global minimum whenever any message is due, so the two orders
+coincide by construction as well as by measurement.
 
-Measured on this host by building both revisions from a `git worktree` and
-running the same benchmarks against each. The small topologies are reported as
+Measured on this host, running the same benchmarks against each scheduler. The small topologies are reported as
 medians of ten samples at automatically scaled iteration counts, roughly three
 thousand runs per sample; the large ones as medians of five single-run samples,
 which is adequate only because the effect there is large.
@@ -280,40 +271,24 @@ five at thirty-two nodes with a delay bound of 128. That is the regime a
 framework user testing a wide topology reaches, not the regime these campaigns
 use.
 
-Two statements from earlier revisions of this report are withdrawn. The first
-claimed the linear scan dominated the `delay-only` campaign; it does not, and
-the campaign is unchanged by this work. The second, made from a five-sample
-run at one iteration each, reported a 29 percent regression at five nodes with
-a delay bound of five; at proper iteration counts that difference is three
-percent with overlapping ranges, and it was an artifact of the measurement
-rather than a property of the code.
-
-The 1,000-seed campaign timings in this run are up to 30 percent higher than
-the previous revision's, including for campaigns whose topology the scheduler
-change cannot affect. That is host variance. The benchmark comparison above is
-the controlled measurement and the only one this report draws a conclusion
-from.
 
 ## Artifacts
 
 Raw gate output on the qualification host:
 
-- `benchmarks/artifacts/heap-equivalence.txt`;
-- `benchmarks/artifacts/heap-bench.txt` and `heap-bench-baseline.txt`;
-- `benchmarks/artifacts/heap-bench-v2.txt` and `heap-bench-baseline-v2.txt`;
-- `benchmarks/artifacts/faults-scenario.txt`;
-- `benchmarks/artifacts/dst-engine-036a3ef-seeds.txt` (seed sweep, `sim`
-  unmodified since).
+- `benchmarks/artifacts/sentinel-phase6-20260817T152258Z/`.
 
 These paths are ignored by the repository; the reports in `benchmarks/` cite
 them, the raw files stay on the qualification host.
 
-## Relationship to the qualified baseline
+## Relationship to the rest of the evidence
 
-`main` carries the framework work as of `db2c8b3`, which builds on the
-qualified reference baseline `8148e35`. This report covers branch work and does
-not amend the frozen evidence index: `EVIDENCE.md`, `STATUS.md`, and
-`ROADMAP.md` continue to describe the six completed roadmap phases and are
-deliberately unchanged. The `dst` package, the scenario format, the command
-extraction, and the device conformance suite are not part of any roadmap phase
-and claim no phase acceptance.
+The consensus core, its storage, and the service around it were qualified by
+the gates recorded in `benchmarks/sentinel-2026-08-17.md`, run on the same host
+on the same day at the same commit. This report covers the framework layer
+built on top of them: the engine, its invariants, its fault injection, the
+scenario format, and the storage conformance suite. That layer is not part of
+any roadmap phase and claims no phase acceptance.
+
+`sim` is retained deliberately. It is the reference the equivalence campaigns
+compare against, and removing it would remove the gate.

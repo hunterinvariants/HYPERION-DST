@@ -113,13 +113,13 @@ go run ./cmd/promtactd -config examples/cluster.json -id 3
 The extracted engine is verified against the simulator these gates qualified:
 7,000 paired runs compare the two at every tick and require a bit-identical
 execution. Evidence in
-[benchmarks/sentinel-dst-engine-2026-08-16.md](benchmarks/sentinel-dst-engine-2026-08-16.md).
+[benchmarks/sentinel-dst-engine-2026-08-17.md](benchmarks/sentinel-dst-engine-2026-08-17.md).
 
 ## Verified Linux baseline
 
 On the `sentinel` Linux host, the following gates passed:
 
-- Ubuntu 24.04.4 LTS, kernel `6.8.0-136-generic`, Go 1.25.0;
+- Ubuntu 24.04.4 LTS, kernel `6.8.0-137-generic`, Go 1.25.13;
 - `io_uring_setup`, registered buffer/file, `O_DIRECT`, `WRITE_FIXED`, CQE, `FSYNC`;
 - WAL write, close, reopen, checksum validation, and bit-exact replay;
 - XDP and TC verifier/JIT loading;
@@ -130,18 +130,16 @@ On the `sentinel` Linux host, the following gates passed:
 - bounded live Jepsen/Knossos workload under process and TC network faults: `valid? true`;
 - bounded TLC model: 46,667,923 states generated, 6,121,927 distinct, no invariant violation.
 
-Measured durable block writes on ext4 over `/dev/sda2`:
+Durable 4 KiB writes with one completed `FSYNC` per operation, through
+registered `io_uring` with `O_DIRECT` and `WRITE_FIXED`:
 
-| Metric | Result |
-|---|---:|
-| Operations | 1,000 |
-| Throughput | 1,844 ops/s |
-| p50 | 533.815 us |
-| p99 | 705.035 us |
-| Max | 1.382461 ms |
+| Target | Operations | Throughput | p50 | p99 | Max |
+|---|---:|---:|---:|---:|---:|
+| file on ext4 over `/dev/sda2` | 1,000 | 2,189 ops/s | 449.616 us | 543.602 us | 1.517617 ms |
+| raw NVMe `/dev/nvme0n1` | 10,000 | 7,971 ops/s | 117.207 us | 196.343 us | 13.668893 ms |
 
-This is a block-device baseline, not a physical NVMe measurement. Full evidence
-and commands are in [benchmarks/sentinel-block-device-2026-07-28.md](benchmarks/sentinel-block-device-2026-07-28.md).
+These describe this machine's devices, not hardware in general. Full evidence
+and commands are in [benchmarks/sentinel-2026-08-17.md](benchmarks/sentinel-2026-08-17.md).
 
 Linux capability and integration gates:
 

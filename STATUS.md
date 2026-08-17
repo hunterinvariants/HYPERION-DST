@@ -23,7 +23,7 @@ Updated: 2026-07-28
 | WAL + io_uring | write, close, reopen, validate, replay | `storage/uringwal` integration pass |
 | Kernel chaos | XDP and TC verifier/JIT | Sentinel verifier pass |
 | Kernel chaos | isolated delay/drop and cleanup | Sentinel live test |
-| Phase 3 | Linux io_uring, direct NVMe I/O, XDP/TC chaos, safe cleanup | complete; Sentinel and GCP Local SSD evidence |
+| Phase 3 | Linux io_uring, direct NVMe I/O, XDP/TC chaos, safe cleanup | complete; Sentinel evidence |
 | Snapshot format | checksummed encode/decode and torn-image rejection | unit tests |
 | Membership | old/new joint-majority calculation | unit tests |
 | Tooling | seed sweeper, race suite, fuzz target, CI | executable commands/workflows |
@@ -32,22 +32,22 @@ Updated: 2026-07-28
 | Client safety | replicated request IDs, deterministic deduplication, ReadIndex reads | restart and failover tests |
 | Operations | bounded queues, health, metrics, shutdown, backup/restore | unit and integration tests |
 | Jepsen | live register workload and Knossos checker | Sentinel `valid? true` under process and TC network faults |
-| NVMe | GCP Local SSD raw `O_DIRECT` + registered io_uring durability | 10,000 writes, 10,132 ops/s, p99 132.080 us, all gates pass |
+| NVMe | raw `O_DIRECT` + registered io_uring durability on `/dev/nvme0n1` | 10,000 writes, 7,971 ops/s, p99 196.343 us, all gates pass |
 
 Additional measured evidence:
 
 - 1,000 seeds x 1,000 virtual ticks with periodic restart: pass;
 - WAL encode benchmark: 0 B/op, 0 allocs/op;
 - Raft heartbeat Step: 0 allocations across 10,000 measured runs;
-- 1,000 durable `WRITE_FIXED + FSYNC` operations: 1,844 ops/s;
-- latency: p50 533.815 us, p99 705.035 us, max 1.382461 ms;
+- 1,000 durable `WRITE_FIXED + FSYNC` operations to a file: 2,189 ops/s,
+  p50 449.616 us, p99 543.602 us, max 1.517617 ms;
 - Phase 4 Sentinel race gate: pass;
 - 100x deterministic five-node Raft/DST gate: pass in 481.973 seconds;
 - 100x io_uring snapshot/compaction/recovery gate: pass;
 - Phase 5 five-process Sentinel gate: pass;
 - Jepsen/Knossos register history under process and TC faults: `valid? true`.
-- GCP Local SSD NVMe gate: 10,000 durable operations, p50 95.074 us,
-  p99 132.080 us, max 551.414 us; race, TLC, and 100x integration gates pass.
+- raw NVMe gate: 10,000 durable operations, p50 117.207 us, p99 196.343 us,
+  max 13.668893 ms; race, TLC, and 100x integration gates pass.
 - Phase 6 Sentinel gate: ENOSPC/EIO/corruption/restart/SIGKILL pass;
   Jepsen/Knossos `valid? true`; bounded TLC 46,667,923 generated and
   6,121,927 distinct states with no invariant violation.
@@ -66,6 +66,6 @@ acceptance gates:
 Promtact has completed all six scoped roadmap phases and their recorded
 acceptance gates. It is a verification-focused reference system, not a turnkey
 managed database service. Claims remain bounded by the checked-in evidence:
-zero-allocation is established only for the measured hot paths, NVMe latency
-only for the named GCP configuration, Jepsen linearizability only for the
+zero-allocation is established only for the measured hot paths, latency only
+for the named devices, Jepsen linearizability only for the
 recorded workload, and TLA+ safety only for the documented finite bounds.
