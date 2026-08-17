@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -30,6 +31,38 @@ func TestProjectTemplateIsValidGo(t *testing.T) {
 	}
 	if found == 0 {
 		t.Fatal("the template contains no Go files")
+	}
+}
+
+// TestProjectTemplateDeclaresMain guards a defect that shipped once: the
+// template declared package main with no main function, so a generated project
+// passed go test and failed go build. Parsing alone does not catch it, because
+// each file is valid Go on its own.
+func TestProjectTemplateDeclaresMain(t *testing.T) {
+	fset := token.NewFileSet()
+	packageMain, hasMain := false, false
+	for _, file := range projectTemplate {
+		if !strings.HasSuffix(file.name, ".go") {
+			continue
+		}
+		body := strings.ReplaceAll(file.body, modulePlaceholder, "example.com/generated")
+		parsed, err := parser.ParseFile(fset, file.name, body, parser.SkipObjectResolution)
+		if err != nil {
+			continue // TestProjectTemplateIsValidGo reports this
+		}
+		if parsed.Name.Name == "main" {
+			packageMain = true
+		}
+		for _, decl := range parsed.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if ok && fn.Name.Name == "main" && fn.Recv == nil {
+				hasMain = true
+			}
+		}
+	}
+	if packageMain && !hasMain {
+		t.Fatal("the template declares package main without a main function; " +
+			"a generated project would fail go build and go run")
 	}
 }
 

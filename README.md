@@ -22,10 +22,14 @@ checking, or checked-in measurements. Every claim carries its bounds in
 ## Try it in a minute
 
 ```bash
-go test ./... -race -count=1
+go test ./...
 go test ./examples/paxos -v
 go run ./cmd/promtact simulate -config examples/leader-partition.json
 ```
+
+The full suite runs under the race detector too, which needs a C toolchain
+because `-race` requires cgo. There is no cgo anywhere else in this project, so
+the plain command above is enough to try it out.
 
 The second command is the point of the project: a complete protocol that is
 **not** Raft — single-decree Paxos — driven through the same engine, with its
@@ -35,8 +39,12 @@ own invariants and partition campaigns. See
 Start your own from a working skeleton:
 
 ```bash
-go run ./cmd/promtact new mysystem && cd mysystem && go mod tidy && go test ./... -v
+go run ./cmd/promtact new ../mysystem && cd ../mysystem && go mod tidy && go test ./... -v
 ```
+
+The target is outside this checkout on purpose: a generated project is its own
+Go module, and putting one inside the repository leaves an untracked directory
+that looks like something you forgot to commit.
 
 Every command lives behind one umbrella binary. Commands needing kernel
 facilities a build cannot reach are absent rather than listed and failing.

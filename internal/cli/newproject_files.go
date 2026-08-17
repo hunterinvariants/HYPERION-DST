@@ -7,12 +7,86 @@ package cli
 // right.
 var projectTemplate = []templateFile{
 	{name: "go.mod", body: goModTemplate},
+	{name: "main.go", body: mainTemplate},
 	{name: "protocol.go", body: protocolTemplate},
 	{name: "cluster.go", body: clusterTemplate},
 	{name: "protocol_test.go", body: testTemplate},
 	{name: "scenario.json", body: scenarioTemplate},
 	{name: "README.md", body: readmeTemplate},
 }
+
+// mainTemplate makes the generated project a program as well as a test suite.
+// Without it the package declares main and has no main function, so go build
+// and go run fail on a freshly generated project while go test succeeds — a
+// trap that only shows up once someone tries the obvious command.
+const mainTemplate = `package main
+
+import (
+	"errors"
+	"fmt"
+	"os"
+
+	"github.com/hunterinvariants/promtact/dst"
+	"github.com/hunterinvariants/promtact/dst/scenario"
+)
+
+// main runs scenario.json once and reports what happened. The campaigns in
+// protocol_test.go are where the real work is; this exists so that go run .
+// gives you a single reproducible run to look at.
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	spec, err := scenario.Load("scenario.json")
+	if err != nil {
+		return err
+	}
+	config, err := spec.EngineConfig()
+	if err != nil {
+		return err
+	}
+	injectors, err := spec.Injectors()
+	if err != nil {
+		return err
+	}
+
+	cluster := New(spec.Nodes)
+	engine := dst.New[Message](config, cluster, cluster)
+	engine.Watch(cluster.SafetyInvariants()...)
+	engine.Inject(injectors...)
+
+	cluster.Propose(1, 0xFEED)
+	engine.Collect()
+
+	if err := engine.RunChecked(spec.Steps); err != nil {
+		var violation *dst.Violation
+		if errors.As(err, &violation) {
+			// A violation is a coordinate, not just a message: the same seed
+			// and the same actions reach the same step and the same trace.
+			fmt.Printf("violated=%q step=%d trace=%s\n",
+				violation.Invariant, violation.Step, violation.Trace)
+		}
+		return err
+	}
+
+	adopted := 0
+	for _, id := range cluster.Nodes() {
+		if _, ok := cluster.Node(id).Adopted(); ok {
+			adopted++
+		}
+	}
+	fmt.Printf("scenario=%q seed=%s nodes=%d steps=%d adopted=%d trace=%s\n",
+		spec.Name, spec.Seed, spec.Nodes, spec.Steps, adopted, engine.TraceHash())
+	for _, injector := range injectors {
+		fmt.Printf("fault=%q dropped=%d\n", injector.Name(), engine.InjectedDrops()[injector.Name()])
+	}
+	return nil
+}
+`
 
 const goModTemplate = `module MODULEPATH
 
@@ -307,11 +381,17 @@ deterministic engine.
 
     go mod tidy
     go test ./... -v
+    go run .
+
+The tests are where the work happens. ` + "`go run .`" + ` executes scenario.json once and
+prints the trace hash and what each fault dropped, which is useful while you are
+changing the protocol and want a single run to look at.
 
 ## What is here
 
 | File | Role |
 |---|---|
+| main.go | Runs scenario.json once and reports the result. |
 | protocol.go | The protocol. Replace this with yours. |
 | cluster.go | The adapter: four methods for dst.Cluster, two for dst.Wire, plus your invariants. |
 | protocol_test.go | Campaigns, including one that requires the engine to catch a real flaw. |
