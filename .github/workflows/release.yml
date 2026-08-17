@@ -26,6 +26,10 @@ jobs:
       - run: go vet ./...
       - run: go test ./... -race -count=1
       - run: go run ./cmd/hyperion-seeds -from 1 -to 1000 -steps 1000
+      # Blocking here, unlike in the nightly: shipping signed binaries built
+      # with a toolchain that has a known reachable vulnerability is the one
+      # case where stopping is clearly right.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   build:
     needs: gate
