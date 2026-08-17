@@ -1,9 +1,9 @@
 # Promtact
 
-[![CI](https://github.com/hunterinvariants/promtact/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/ci.yml)
-[![Nightly](https://github.com/hunterinvariants/promtact/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/nightly.yml)
-[![Kernel build](https://github.com/hunterinvariants/promtact/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/kernel.yml)
-[![Formal](https://github.com/hunterinvariants/promtact/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/promtact/actions/workflows/formal.yml)
+[![CI](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/ci.yml)
+[![Nightly](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/nightly.yml)
+[![Kernel build](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/kernel.yml)
+[![Formal](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml/badge.svg)](https://github.com/hunterinvariants/Promtact/actions/workflows/formal.yml)
 ![Specification & Qualification](https://img.shields.io/badge/specification%20%26%20qualification-complete-2ea44f)
 
 Test distributed protocols the way you test pure functions: run your own
@@ -74,7 +74,7 @@ one that checks the attestation without a GitHub account.
 
 ```bash
 git clone https://github.com/hunterinvariants/Promtact.git
-cd promtact
+cd Promtact
 go test ./...
 go test ./examples/paxos -v
 go run ./cmd/promtact simulate -config examples/leader-partition.json

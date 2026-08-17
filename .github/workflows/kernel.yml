@@ -9,6 +9,12 @@ on:
       - "storage/uring/**"
       - ".github/workflows/kernel.yml"
   pull_request:
+  # The paths filter above means this can sit for weeks without running, so a
+  # transient runner failure freezes the badge in the README on a result the
+  # code has since passed. Without a manual trigger the only way to clear it is
+  # to touch one of those paths, which is a commit made for the badge rather
+  # than for the code.
+  workflow_dispatch:
 
 permissions:
   contents: read
