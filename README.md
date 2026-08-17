@@ -56,6 +56,14 @@ As a command, to run scenarios and the gates:
 go install github.com/hunterinvariants/promtact/cmd/promtact@latest
 ```
 
+`@latest` asks the Go module proxy, which learns about a new tag on its own
+schedule and can answer with the previous release for a while after one is
+published. Name the version to get exactly it:
+
+```bash
+go install github.com/hunterinvariants/promtact/cmd/promtact@v0.3.5
+```
+
 `go install` writes the binary to `$(go env GOPATH)/bin`, which is not on
 `PATH` on a fresh machine:
 
